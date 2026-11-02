@@ -72,5 +72,5 @@
  document.addEventListener('pointerover',event=>{const card=event.target.closest?.('.app-card');if(card)selectApp(catalog.find(app=>app.id===card.dataset.id))});document.addEventListener('focusin',event=>{const card=event.target.closest?.('.app-card');if(card)selectApp(catalog.find(app=>app.id===card.dataset.id))});
  const previousNavigate=navigate;navigate=function(next){previousNavigate(next);if(next==='home'||next==='apps'){const first=$('.app-card');if(first)selectApp(catalog.find(app=>app.id===first.dataset.id))}else{clearTimeout(timer);request?.abort();++generation;selectedApp=null}};document.querySelectorAll('[data-page]').forEach(button=>button.onclick=()=>navigate(button.dataset.page));
  const first=$('.app-card');if(first)selectApp(catalog.find(app=>app.id===first.dataset.id));
- $('#help').textContent='Peep Connect · 0.16.1';window.PeepStudio={themes:studioThemes,setMotion,selectApp,get themeNavigation(){return themeNavigation}};
+ $('#help').textContent='Peep Connect · 0.16.2';window.PeepStudio={themes:studioThemes,setMotion,selectApp,get themeNavigation(){return themeNavigation}};
 })();

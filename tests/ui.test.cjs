@@ -182,3 +182,44 @@ test('theme navigation pauses native telemetry work and resumes it after closing
   assert.deepEqual(errors,[]);
  }finally{dom.window.close()}
 });
+
+test('Ambient weather displays measured conditions and temperature ranges without inventing missing data',async()=>{
+ const {dom,w,d,errors}=await open();try{
+  const at=Date.now()/1000;
+  const weather={sourceAt:at,fetchedAt:at,current:{temperature_2m:0,apparent_temperature:-2,relative_humidity_2m:65,wind_speed_10m:0,weather_code:3},daily:{time:['2026-11-02','2026-11-03','2026-11-04'],temperature_2m_min:[-5,0,2],temperature_2m_max:[3,7,9],weather_code:[3,2,0]}};
+  w.eval('weather='+JSON.stringify(weather)+';weatherError=false;displayWeather()');
+  assert.equal(d.querySelector('#amb-humidity').textContent,'65%');assert.equal(d.querySelector('.amb-gauge-value').getAttribute('stroke-dasharray'),'65 100');
+  assert.equal(d.querySelector('#amb-wind').textContent,'0');assert.equal(d.querySelector('.amb-conditions-card').dataset.wind,'still');
+  assert.equal(d.querySelector('#amb-feels').textContent,'-2°');assert.equal(d.querySelector('#amb-feels-note').textContent,'2° abaixo da temperatura');
+  assert.equal(d.querySelectorAll('.amb-temperature-range>b').length,3);assert.match(d.querySelector('.amb-temperature-range').getAttribute('aria-label'),/mínima -5°, máxima 3°/);
+  const last=d.querySelectorAll('.amb-temperature-range>b')[2];assert.ok(Math.abs(parseFloat(last.style.left)-50)<.01);assert.ok(Math.abs(parseFloat(last.style.width)-50)<.01);
+  weather.current.relative_humidity_2m=110;weather.current.wind_speed_10m=-1;weather.current.apparent_temperature=null;weather.daily.temperature_2m_max[1]=null;
+  w.eval('weather='+JSON.stringify(weather)+';displayWeather()');
+  assert.equal(d.querySelector('#amb-humidity').textContent,'—');assert.equal(d.querySelector('.amb-gauge-value').getAttribute('stroke-dasharray'),'0 100');assert.match(d.querySelector('#amb-humidity-gauge').getAttribute('aria-label'),/indisponível/);
+  assert.equal(d.querySelector('#amb-wind').textContent,'—');assert.equal(d.querySelector('#amb-feels').textContent,'—');
+  assert.equal(d.querySelectorAll('.amb-temperature-range>b').length,2);assert.ok(!d.querySelector('#amb-forecast').innerHTML.includes('NaN'));
+  weather.sourceAt=at+3600;w.eval('weather='+JSON.stringify(weather)+';displayWeather()');assert.equal(d.querySelector('#amb-weather-state').textContent,'Indisponível');assert.equal(d.querySelector('#amb-humidity').textContent,'—');
+  assert.deepEqual(errors,[]);
+ }finally{dom.window.close()}
+});
+test('Ambient market charts show only provider history or distinct samples from this session',async()=>{
+ const {dom,w,d,errors}=await open();try{
+  const at=Date.now()/1000,common={ok:true,sourceAt:at,fetchedAt:at,value:5.1,change:1,source:'Test source'};
+  const data={items:{usd:{...common},usdc:{...common,value:1,brl:5.1},ibov:{...common,value:120000,history:[{value:118000},{value:119000},{value:120000}]}}};
+  w.eval('marketData='+JSON.stringify(data)+';paintMarkets()');
+  assert.equal(d.querySelector('#market-usd .market-visual').dataset.history,'false');assert.ok(d.querySelector('#market-usd .market-visual svg').hasAttribute('hidden'));
+  assert.equal(d.querySelector('#market-ibov .market-visual').dataset.history,'true');assert.match(d.querySelector('#market-ibov .market-visual small').textContent,/3 pregões/);assert.ok(d.querySelector('#ibov-line').getAttribute('points'));
+  w.eval('paintMarkets()');assert.equal(d.querySelector('#market-usd .market-visual').dataset.history,'false','Repeating a response is not another sample');
+  data.items.usd.sourceAt+=60;data.items.usd.value=5.2;w.eval('marketData='+JSON.stringify(data)+';paintMarkets()');
+  assert.equal(d.querySelector('#market-usd .market-visual').dataset.history,'true');assert.ok(!d.querySelector('#market-usd .market-visual svg').hasAttribute('hidden'));
+  data.items.usd={ok:false,error:'Fonte indisponível'};w.eval('marketData='+JSON.stringify(data)+';paintMarkets()');assert.equal(d.querySelector('#market-usd .market-visual').dataset.history,'false');assert.equal(d.querySelector('#usd-price').textContent,'—');assert.equal(d.querySelector('#amb-usd-state').textContent,'Indisponível');
+  assert.deepEqual(errors,[]);
+ }finally{dom.window.close()}
+});
+test('Ambient refresh keeps its loading state until all sources finish and blocks duplicate requests',async()=>{
+ const {dom,w,d,errors}=await open();try{
+  let release,calls=0;const base=w.fetch;w.fetch=async input=>{if(String(input).startsWith('/api/weather?force=1')){calls++;return new Promise(resolve=>release=()=>resolve(new Response(JSON.stringify({fetchedAt:Date.now()/1000,current:{temperature_2m:22,weather_code:2},daily:{time:['2026-11-02']}}),{headers:{'Content-Type':'application/json'}})))}return base(input)};
+  const pending=w.PeepAmbient.refresh();await delay(10);const button=d.querySelector('#refresh-markets');assert.equal(button.disabled,true);assert.equal(button.getAttribute('aria-busy'),'true');
+  await w.PeepAmbient.refresh();assert.equal(calls,1);release();await pending;assert.equal(button.disabled,false);assert.equal(button.getAttribute('aria-busy'),'false');assert.deepEqual(errors,[]);
+ }finally{dom.window.close()}
+});

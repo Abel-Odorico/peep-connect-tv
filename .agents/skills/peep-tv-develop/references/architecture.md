@@ -8,7 +8,7 @@
 - `studio.js`: temas em cinco abas, paginação, movimento explícito, conteúdo relacionado ao app focado e ordem da home.
 - `performance.js`: CPU ADB e histórico legado. `performance-pro.js`: apresentação de Performance e tráfego. `network-quality.js`: testes HTTP manuais de internet; motor Cloudflare lazy em dist/vendor.
 - `living.js`, `idle-rich.js`, `horizons.js`, `idle-prisma.js`: cadeia histórica do descanso; preservar entrada, saída, teclado e IDs do clima. Corrigir no proprietário em vez de criar mais um wrapper.
-- `ambient-next.js`: atualidade e origem dos dados de Ambiente; `catalog.js`, `youtube.js`, `wallpapers.js`: conteúdo externo e imagens.
+- `ambient-next.js` / `ambient-next.css`: composição visual, previsão em escala comum, gráficos reais de mercado, atualidade e origem dos dados de Ambiente; consultar `docs/AMBIENT-0.16.2.md`. `catalog.js`, `youtube.js`, `wallpapers.js`: conteúdo externo e imagens.
 - `MainActivity.java`: WebView, atalhos e bridge. `DeviceMetrics.java`: amostra local read-only. `BluetoothStatus.java`: conexões autorizadas pelo Android.
 - `server.py`: HTTP loopback, Host/Origin, arquivos somente dist; `tmdb_service.py`, `youtube_service.py`, `ambient_data.py`, `performance_data.py`: serviços.
 
