@@ -1,6 +1,6 @@
 {
   "name": "peep-connect-tv",
-  "version": "0.16.4",
+  "version": "0.16.5",
   "private": true,
   "description": "Peep Connect Android TV experience",
   "scripts": {
@@ -11,6 +11,7 @@
   "devDependencies": {
     "@cloudflare/speedtest": "1.15.0",
     "esbuild": "0.28.2",
-    "jsdom": "26.1.0"
+    "jsdom": "26.1.0",
+    "qrcode": "1.5.4"
   }
 }

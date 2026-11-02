@@ -47,6 +47,128 @@ class YouTube:
         except (OSError, ValueError, KeyError, TypeError, AttributeError):
             raise YouTubeError('Configure o cliente OAuth de aplicativo para computador do Google antes de conectar.', 503) from None
 
+    def device_config(self):
+        try:
+            raw = json.loads((self.private / 'google-tv-client.json').read_text())
+            config = raw.get('installed', raw)
+            if not config['client_id'].endswith('.apps.googleusercontent.com') or not config.get('client_secret'):
+                raise ValueError()
+            return config
+        except (OSError, ValueError, KeyError, TypeError, AttributeError):
+            raise YouTubeError('Configure o cliente OAuth de TVs e dispositivos de entrada limitada em .private/google-tv-client.json.', 503) from None
+
+    def device_request(self, endpoint, form):
+        request = urllib.request.Request('https://oauth2.googleapis.com/' + endpoint,
+            data=urllib.parse.urlencode(form).encode(), headers={'Content-Type': 'application/x-www-form-urlencoded'})
+        try:
+            with urllib.request.urlopen(request, timeout=14) as response:
+                data = json.load(response)
+                if not isinstance(data, dict):
+                    raise YouTubeError('O Google retornou uma resposta inválida.', 502)
+                return data
+        except urllib.error.HTTPError as error:
+            try:
+                body = json.load(error)
+                reason = body.get('error', body.get('error_code', 'unknown'))
+            except (ValueError, AttributeError):
+                reason = 'unknown'
+            return {'error': reason if isinstance(reason, str) else 'unknown'}
+        except (OSError, ValueError):
+            raise YouTubeError('Não foi possível consultar o Google. Confira a internet e tente novamente.', 502) from None
+
+    def device_begin(self):
+        with self.lock:
+            now = time.monotonic()
+            previous = getattr(self, 'device_attempt', None)
+            if previous and previous['expires'] > now and previous['status'] == 'pending':
+                return self.device_public(previous)
+            if now < getattr(self, 'device_start_after', 0):
+                raise YouTubeError('Aguarde alguns segundos antes de gerar outro código.', 429)
+            config = self.device_config()
+            self.device_start_after = now + 30
+            data = self.device_request('device/code', {'client_id': config['client_id'], 'scope': SCOPE})
+            if data.get('error'):
+                raise YouTubeError('O Google recusou a criação do código. Confira o cliente do tipo TVs e dispositivos de entrada limitada, o consentimento e a cota.', 502)
+            url = data.get('verification_url', '')
+            parsed = urllib.parse.urlsplit(url)
+            if parsed.scheme != 'https' or parsed.hostname not in ('google.com', 'www.google.com', 'accounts.google.com') or parsed.username or parsed.password or parsed.port not in (None, 443):
+                raise YouTubeError('O Google retornou um endereço de autorização inesperado.', 502)
+            if not isinstance(data.get('user_code'), str) or not isinstance(data.get('device_code'), str) or not data['user_code'] or not data['device_code']:
+                raise YouTubeError('O Google retornou uma resposta incompleta.', 502)
+            try:
+                interval = max(5, int(data.get('interval', 5)))
+                lifetime = min(3600, max(1, int(data['expires_in'])))
+            except (TypeError, ValueError, KeyError):
+                raise YouTubeError('O Google retornou uma validade inválida.', 502) from None
+            now = time.monotonic()
+            self.device_attempt = {'id': secrets.token_urlsafe(24), 'code': data['device_code'], 'userCode': data['user_code'], 'verificationUrl': url,
+                'expires': now + lifetime, 'interval': interval, 'next': now + interval, 'status': 'pending', 'config': config}
+            return self.device_public(self.device_attempt)
+
+    def device_public(self, attempt):
+        return {'id': attempt['id'], 'userCode': attempt['userCode'], 'verificationUrl': attempt['verificationUrl'],
+                'expiresIn': max(0, int(attempt['expires'] - time.monotonic())), 'interval': attempt['interval'], 'status': attempt['status']}
+
+    def device_poll(self, session):
+        with self.lock:
+            attempt = getattr(self, 'device_attempt', None)
+            if not attempt or not secrets.compare_digest(attempt['id'], session):
+                return {'status': 'expired'}
+            now = time.monotonic()
+            if attempt['expires'] <= now:
+                self.device_attempt = None
+                return {'status': 'expired'}
+            if attempt['status'] != 'pending':
+                return {'status': attempt['status']}
+            if now < attempt['next'] or attempt.get('polling'):
+                return {'status': 'pending', 'interval': attempt['interval']}
+            config = attempt['config']
+            attempt['next'] = now + attempt['interval']
+            attempt['polling'] = True
+            form = {'client_id': config['client_id'], 'client_secret': config['client_secret'],
+                    'device_code': attempt['code'], 'grant_type': 'urn:ietf:params:oauth:grant-type:device_code'}
+        try:
+            data = self.device_request('token', form)
+        except YouTubeError:
+            with self.lock:
+                attempt['polling'] = False
+            raise
+        with self.lock:
+            attempt['polling'] = False
+            if getattr(self, 'device_attempt', None) is not attempt or attempt['expires'] <= time.monotonic():
+                return {'status': 'expired'}
+            reason = data.get('error')
+            if reason in ('authorization_pending', 'slow_down'):
+                if reason == 'slow_down':
+                    attempt['interval'] += 5
+                attempt['next'] = time.monotonic() + attempt['interval']
+                return {'status': 'pending', 'interval': attempt['interval']}
+            if reason:
+                attempt['status'] = 'denied' if reason == 'access_denied' else 'expired' if reason in ('expired_token', 'invalid_grant') else 'error'
+                attempt.pop('code', None)
+                return {'status': attempt['status']}
+            if not data.get('access_token') or not data.get('refresh_token') or SCOPE not in data.get('scope', '').split():
+                attempt['status'] = 'error'
+                return {'status': 'error'}
+            try:
+                data['expires_at'] = time.time() + int(data.get('expires_in', 3600))
+            except (TypeError, ValueError):
+                attempt['status'] = 'error'
+                return {'status': 'error'}
+            data['_client_kind'] = 'device'
+            self.save_tokens(data)
+            self.feed_cache = None
+            attempt['status'] = 'connected'
+            attempt.pop('code', None)
+            return {'status': 'connected'}
+
+    def device_cancel(self, session):
+        with self.lock:
+            attempt = getattr(self, 'device_attempt', None)
+            if attempt and secrets.compare_digest(attempt['id'], session):
+                self.device_attempt = None
+            return {'ok': True}
+
     def tokens(self):
         try:
             data = json.loads((self.private / 'youtube-tokens.json').read_text())
@@ -61,8 +183,13 @@ class YouTube:
         except YouTubeError:
             configured = False
         token = self.tokens()
-        connected = configured and bool(token.get('refresh_token') or token.get('access_token'))
-        return {'configured': configured, 'apiConfigured': bool(self.api_key()), 'connected': connected, 'account': self.feed_cache.get('account') if self.feed_cache and connected else None}
+        try:
+            self.device_config()
+            device_configured = True
+        except YouTubeError:
+            device_configured = False
+        connected = (device_configured if token.get('_client_kind') == 'device' else configured) and bool(token.get('refresh_token') or token.get('access_token'))
+        return {'configured': configured, 'deviceConfigured': device_configured, 'deviceFlowVersion': 1, 'apiConfigured': bool(self.api_key()), 'connected': connected, 'account': self.feed_cache.get('account') if self.feed_cache and connected else None}
 
     def public_feed(self):
         with self.lock:
@@ -161,7 +288,7 @@ class YouTube:
                 return data['access_token']
             if not data.get('refresh_token'):
                 raise YouTubeError('Conecte sua conta do YouTube.', 401)
-            config = self.config()
+            config = self.device_config() if data.get('_client_kind') == 'device' else self.config()
             update = self.request('https://oauth2.googleapis.com/token', {'client_id': config['client_id'], 'client_secret': config.get('client_secret', ''), 'refresh_token': data['refresh_token'], 'grant_type': 'refresh_token'})
             if not update.get('access_token'):
                 raise YouTubeError('Não foi possível renovar a autorização.', 401)
@@ -222,3 +349,4 @@ class YouTube:
             (self.private / 'youtube-tokens.json').unlink(missing_ok=True)
             self.feed_cache = None
             self.pending.clear()
+            self.device_attempt = None

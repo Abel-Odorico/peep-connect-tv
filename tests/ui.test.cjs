@@ -17,7 +17,7 @@ async function open(initialPrefs){
  const errors=[];const console=new VirtualConsole();console.on('jsdomError',e=>errors.push(e.message));
  const dom=new JSDOM(html,{url:'http://127.0.0.1:8770/?tv=1',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:console,beforeParse(w){
   if(initialPrefs){w.localStorage.setItem('konka-glass-v1',JSON.stringify(initialPrefs));w.Image=class{set src(value){this._src=value;w.setTimeout(()=>this.onload?.(),0)}get src(){return this._src}}}
-  w.Response=Response;w.AbortSignal=AbortSignal;w.AbortController=AbortController;
+  w.TextEncoder=TextEncoder;w.TextDecoder=TextDecoder;w.Response=Response;w.AbortSignal=AbortSignal;w.AbortController=AbortController;
   w.matchMedia=()=>({matches:false});w.HTMLElement.prototype.scrollIntoView=()=>{};
   w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'))};
   w.setInterval=()=>1;
@@ -226,12 +226,12 @@ test('Ambient refresh keeps its loading state until all sources finish and block
   await w.PeepAmbient.refresh();assert.equal(calls,1);release();await pending;assert.equal(button.disabled,false);assert.equal(button.getAttribute('aria-busy'),'false');assert.deepEqual(errors,[]);
  }finally{dom.window.close()}
 });
-test('Google account action opens setup when OAuth is missing and TV handoff when configured',async()=>{
+test('Google account action offers phone authorization and never launches a TV browser',async()=>{
  const {dom,w,d,errors}=await open();try{
   await w.youtubeAccount();assert.ok(d.querySelector('#youtube-check'));assert.match(d.querySelector('dialog').textContent,/cliente OAuth/);
-  const fetch=w.fetch;w.fetch=async input=>String(input).includes('/api/youtube/status')?new Response(JSON.stringify({configured:true,connected:false,apiConfigured:true}),{headers:{'Content-Type':'application/json'}}):fetch(input);
-  await w.youtubeAccount();assert.ok(d.querySelector('#youtube-tv-check'));assert.equal(d.querySelector('a[href="/api/youtube/connect"]'),null,'TV must not attempt embedded OAuth');
-  await d.querySelector('#youtube-tv-check').onclick();assert.match(d.querySelector('#youtube-tv-state').textContent,/Ainda não recebemos/);assert.equal(d.querySelector('#youtube-tv-check').disabled,false);
+  const fetch=w.fetch;w.fetch=async input=>String(input).includes('/api/youtube/status')?new Response(JSON.stringify({configured:false,deviceConfigured:true,connected:false,apiConfigured:true}),{headers:{'Content-Type':'application/json'}}):fetch(input);
+  await w.youtubeAccount();assert.ok(d.querySelector('#youtube-device-start'));assert.equal(d.querySelector('a[href="/api/youtube/connect"]'),null,'TV must not attempt embedded OAuth');
+  assert.equal(d.querySelector('dialog a[href]'),null,'No external browser links on the TV account panel');
   assert.deepEqual(errors,[]);
  }finally{dom.window.close()}
 });
@@ -249,6 +249,16 @@ test('Collection motion uses scene-specific HTML objects without deforming the o
   w.PeepCollections.selectBackdrop('obsidiana','animated');assert.equal(d.querySelectorAll('.collection-home-stage .lake-ripple').length,3);assert.ok(d.querySelector('.collection-home-stage .gold-trace'));
   w.PeepCollections.selectBackdrop('solsticio','animated');assert.ok(d.querySelector('.collection-home-stage .solar-corona'));assert.equal(d.querySelectorAll('.collection-home-stage .solar-dust').length,4);
   w.PeepCollections.selectBackdrop('solsticio','static');assert.ok(d.querySelector('.collection-home-stage').hidden);assert.equal(d.querySelectorAll('.collection-home-stage .scene-object').length,0);
+  assert.deepEqual(errors,[]);
+ }finally{dom.window.close()}
+});
+
+test('Device QR uses Google response, displays original code and cancels on closing',async()=>{
+ const {dom,w,d,errors}=await open();try{
+  const original=w.fetch,calls=[];
+  w.fetch=async(input,opts)=>{if(String(input).includes('/device/')){calls.push([String(input),opts]);return new Response(JSON.stringify(String(input).endsWith('/start')?{id:'test-session',userCode:'WXYZ-1234',verificationUrl:'https://www.google.com/device',interval:5,expiresIn:600}:{ok:true}),{headers:{'Content-Type':'application/json'}})}return original(input,opts)};
+  w.youtubeDevicePanel();await w.startYouTubeDevice();assert.equal(d.querySelector('#youtube-device-code').textContent,'WXYZ-1234');assert.ok(d.querySelector('#youtube-device-qr svg'));assert.equal(d.querySelector('dialog a[href]'),null);
+  d.querySelector('#youtube-device-cancel').click();await delay(10);assert.equal(calls.filter(x=>x[0].endsWith('/cancel')).length,1);assert.equal(calls.filter(x=>x[0].endsWith('/poll')).length,0);
   assert.deepEqual(errors,[]);
  }finally{dom.window.close()}
 });

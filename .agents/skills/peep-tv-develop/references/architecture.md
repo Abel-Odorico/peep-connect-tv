@@ -10,6 +10,7 @@
 - `living.js`, `idle-rich.js`, `horizons.js`, `idle-prisma.js`: cadeia histórica do descanso; preservar entrada, saída, teclado e IDs do clima. Corrigir no proprietário em vez de criar mais um wrapper.
 - `ambient-next.js` / `ambient-next.css`: composição visual, previsão em escala comum, gráficos reais de mercado, atualidade e origem dos dados de Ambiente; consultar `docs/AMBIENT-0.16.2.md`. `catalog.js`, `youtube.js`, `wallpapers.js`: conteúdo externo e imagens.
 - `MainActivity.java`: WebView, atalhos e bridge. `DeviceMetrics.java`: amostra local read-only. `BluetoothStatus.java`: conexões autorizadas pelo Android.
+- `youtube.js` / `youtube_service.py`: OAuth de TV com QR local, código, polling limitado pelo servidor e cancelamento; credenciais separadas de desktop em `.private/google-tv-client.json`. Ver `docs/GOOGLE-DEVICE-0.16.5.md`.
 - `server.py`: HTTP loopback, Host/Origin, arquivos somente dist; `tmdb_service.py`, `youtube_service.py`, `ambient_data.py`, `performance_data.py`: serviços.
 
 O APK depende do serviço no computador e ADB reverse. Não afirmar que é launcher HOME ou serviço autônomo. Credenciais, identidade e assinatura ficam em .private e nunca no frontend.

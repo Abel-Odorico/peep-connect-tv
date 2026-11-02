@@ -239,14 +239,31 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_POST(self):
-        if self.headers.get('Host') not in (f'127.0.0.1:{PORT}', f'localhost:{PORT}') or self.headers.get('Origin') not in (f'http://127.0.0.1:{PORT}', f'http://localhost:{PORT}') or self.headers.get('X-Konka-Action') != 'disconnect':
+        actions = {'/api/youtube/disconnect': 'disconnect', '/api/youtube/device/start': 'youtube-device',
+                   '/api/youtube/device/poll': 'youtube-device', '/api/youtube/device/cancel': 'youtube-device'}
+        expected = actions.get(self.path)
+        if not expected or self.headers.get('Host') not in (f'127.0.0.1:{PORT}', f'localhost:{PORT}') or self.headers.get('Origin') not in (f'http://127.0.0.1:{PORT}', f'http://localhost:{PORT}') or self.headers.get('X-Konka-Action') != expected:
             self.json_response({'error': 'Origem não permitida.'}, 403)
             return
-        if self.path == '/api/youtube/disconnect':
-            YOUTUBE.disconnect()
-            self.json_response({'ok': True})
-        else:
-            self.json_response({'error': 'Rota não encontrada.'}, 404)
+        try:
+            if self.path == '/api/youtube/disconnect':
+                YOUTUBE.disconnect()
+                self.json_response({'ok': True})
+            elif self.path.endswith('/start'):
+                self.json_response(YOUTUBE.device_begin())
+            else:
+                size = int(self.headers.get('Content-Length', '0'))
+                if size < 1 or size > 2048:
+                    raise ValueError()
+                body = json.loads(self.rfile.read(size))
+                session = body.get('id') if isinstance(body, dict) else None
+                if not isinstance(session, str) or not session or len(session) > 128:
+                    raise ValueError()
+                self.json_response(YOUTUBE.device_poll(session) if self.path.endswith('/poll') else YOUTUBE.device_cancel(session))
+        except (ValueError, TypeError):
+            self.json_response({'error': 'Solicitação inválida.'}, 400)
+        except YouTubeError as error:
+            self.json_response({'error': error.message}, error.status)
 
     def do_GET(self):
         if self.headers.get('Host') not in (f'127.0.0.1:{PORT}', f'localhost:{PORT}'):

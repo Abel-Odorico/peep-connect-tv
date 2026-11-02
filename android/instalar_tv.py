@@ -135,7 +135,7 @@ def ensure_service(device):
             raise RuntimeError('A porta 8770 pertence a outro serviço. Feche-o antes de continuar.')
         try:
             status = request('/api/youtube/status')
-            if 'apiConfigured' in status and health.get('tvDevice') == device and health.get('catalogVersion') == 2 and health.get('ambientVersion') == 1 and health.get('performanceVersion') == 1:
+            if status.get('deviceFlowVersion') == 1 and 'apiConfigured' in status and health.get('tvDevice') == device and health.get('catalogVersion') == 2 and health.get('ambientVersion') == 1 and health.get('performanceVersion') == 1:
                 return
         except (OSError, ValueError):
             pass

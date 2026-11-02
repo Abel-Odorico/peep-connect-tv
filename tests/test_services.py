@@ -24,7 +24,7 @@ class YouTubeTests(unittest.TestCase):
 
     def test_missing_configuration_is_explicit(self):
         (self.yt.private / 'google-client.json').unlink()
-        self.assertEqual(self.yt.status(), {'configured': False, 'apiConfigured': False, 'connected': False, 'account': None})
+        self.assertEqual(self.yt.status(), {'configured': False, 'deviceConfigured': False, 'deviceFlowVersion': 1, 'apiConfigured': False, 'connected': False, 'account': None})
         with self.assertRaises(YouTubeError):
             self.yt.begin(8770)
 
@@ -95,6 +95,14 @@ class HandlerTests(unittest.TestCase):
         with patch.object(server.YOUTUBE, 'disconnect') as disconnect:
             self.assertEqual(self.call('/api/youtube/disconnect', 'POST', {'Origin': 'http://127.0.0.1:8770', 'X-Konka-Action': 'disconnect'})[0], 200)
             disconnect.assert_called_once()
+
+    def test_device_start_requires_same_origin_and_explicit_action(self):
+        for headers in [{}, {'Origin': 'https://untrusted.invalid', 'X-Konka-Action': 'youtube-device'}, {'Origin': 'http://127.0.0.1:8770', 'X-Konka-Action': 'disconnect'}]:
+            self.assertEqual(self.call('/api/youtube/device/start', 'POST', headers)[0], 403)
+        with patch.object(server.YOUTUBE, 'device_begin', return_value={'userCode': 'TEST-CODE'}) as begin:
+            status, data = self.call('/api/youtube/device/start', 'POST', {'Origin': 'http://127.0.0.1:8770', 'X-Konka-Action': 'youtube-device'})
+            self.assertEqual(status, 200)
+            begin.assert_called_once()
 
     def test_memory_snapshot_parses_pss_without_mutation(self):
         result = type('Result', (), {'returncode': 0, 'stdout': 'Total PSS by process:\n  123,456K: com.google.android.tvlauncher (pid 120 / activities)\n  12,345K: system (pid 1)\nTotal PSS by OOM adjustment:\n'})()

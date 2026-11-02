@@ -2,7 +2,7 @@
 let youtubeState={configured:false,apiConfigured:false,connected:false},youtubeBusy=false,youtubeAccountBusy=false;
 function youtubeMessage(message){$('#youtube-status').textContent=message;$('#youtube-empty').hidden=false}
 function paintYouTubeAccount(){
- $('#youtube-connect').textContent=youtubeState.connected?'Gerenciar conta':'Escolher conta Google';
+ $('#youtube-connect').textContent=youtubeState.connected?'Gerenciar conta':'Conectar pelo celular';
  $('#youtube-title').textContent=youtubeState.connected?'Dos seus canais':'Populares no Brasil';
  $('#youtube-account').textContent=youtubeState.connected?(youtubeState.account||'Conta autorizada no Google'):'Nenhuma conta autorizada neste painel · seleção pública do YouTube';
  $('.youtube-credit').textContent=youtubeState.connected?'Vídeos recentes de suas inscrições; recomendações completas no YouTube.':'Seleção pública por popularidade no Brasil. Não usa histórico nem preferências da sua conta.';
@@ -15,8 +15,9 @@ async function youtubeStatus(load=true){
  }catch(e){youtubeMessage(localMode?'O serviço em execução ainda não possui a integração do YouTube. Reinicie server.py no Terminal e recarregue a página.':'Abra a versão conectada no Mac para carregar os vídeos.');$('#youtube-account').textContent='Serviço do YouTube indisponível · nenhuma conta identificada';return false;}
 }
 function youtubeSetup(){
- show('<p class="eyebrow">CONEXÃO COM O GOOGLE</p><h2>Escolha sua conta do YouTube</h2><p>A conexão deve ser concluída no navegador do Mac que está conectado à TV. Abra http://127.0.0.1:8770 no Mac e use este mesmo botão após configurar o acesso abaixo.</p><p class="inline-note">O painel ainda não tem um cliente OAuth configurado. A chave de API consulta vídeos públicos, mas não identifica contas ou autoriza acesso às suas inscrições.</p><ol class="youtube-steps"><li>Abra o Google Cloud do projeto da sua chave e habilite <strong>YouTube Data API v3</strong>.</li><li>Configure o consentimento e seu usuário de teste, se necessário.</li><li>Crie um cliente OAuth do tipo <strong>Aplicativo para computador</strong>.</li><li>Salve o JSON baixado como <code>konka-glass/.private/google-client.json</code> no Mac.</li></ol><a class="panel-button" href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">Abrir credenciais no Google Cloud ↗</a><button id="youtube-check" class="text-button">Verificar configuração</button><p class="inline-note">A autorização solicita somente leitura do YouTube. Nenhuma senha deve ser informada ao painel.</p>');
- $('#youtube-check').onclick=async()=>{await youtubeStatus(false);if(youtubeState.configured)youtubeAccount();else notify('Cliente OAuth ainda não encontrado. Confira o JSON no Mac e reinicie o serviço se necessário.')};
+ const serviceNote=youtubeState.deviceFlowVersion===1?'':'<p class="inline-note"><strong>Reinicie o serviço no Mac para ativar esta versão do login por QR code.</strong></p>';
+ show(serviceNote+'<p class="eyebrow">GOOGLE · CONEXÃO PELO CELULAR</p><h2>Falta ativar o login por QR code.</h2><p>A TV ficará nesta tela. A escolha da conta e a autorização serão feitas no seu celular.</p><p class="inline-note">A chave de vídeos públicos já é separada deste acesso. Falta configurar uma vez o cliente OAuth específico para TV.</p><ol class="youtube-steps"><li>No Mac, abra <strong>console.cloud.google.com/apis/credentials</strong>.</li><li>Crie um cliente OAuth do tipo <strong>TVs e dispositivos de entrada limitada</strong>.</li><li>Salve o JSON em <code>konka-glass/.private/google-tv-client.json</code>.</li><li>Habilite YouTube Data API v3 e inclua sua conta como usuário de teste, se o projeto estiver em teste.</li></ol><button id="youtube-check" class="panel-button">Verificar configuração</button><p id="youtube-setup-status" role="status">Nenhum QR de autorização foi gerado ainda.</p>');
+ $('#youtube-check').onclick=async()=>{await youtubeStatus(false);if(youtubeState.deviceConfigured)youtubeDevicePanel();else $('#youtube-setup-status').textContent='Cliente OAuth para TV ainda não encontrado. Salve o arquivo no Mac e verifique novamente.'};
 }
 async function youtubeAccount(){
  if(youtubeAccountBusy)return;
@@ -27,12 +28,8 @@ async function youtubeAccount(){
  if(!panel.open||!$('#youtube-account-loading'))return;
  if(!ok){show('<h2>Serviço indisponível</h2><p>Não foi possível verificar a conta. Confira se o serviço está ativo no Mac e tente novamente.</p><button id="youtube-account-retry" class="panel-button">Tentar novamente</button>');$('#youtube-account-retry').onclick=youtubeAccount;return}
 
- if(!youtubeState.configured){youtubeSetup();return}
- if(typeof PeepTV!=='undefined'){
-  show('<p class="eyebrow">YOUTUBE · CONECTAR PELO MAC</p><h2>Escolha sua conta no navegador</h2><p>No Mac que mantém a TV conectada, abra <strong>http://127.0.0.1:8770</strong> e selecione <strong>Escolher conta Google</strong> na seção YouTube.</p><p>A autorização é feita no Google. Depois, seus canais ficam disponíveis neste painel da TV.</p><button id="youtube-tv-check" class="panel-button">Já autorizei · verificar conexão</button><p id="youtube-tv-state" role="status">'+(youtubeState.connected?'Conta autorizada neste painel.':'Aguardando autorização no Mac.')+'</p><p class="inline-note">A conta do aplicativo YouTube da TV não é importada automaticamente.</p>');
-  $('#youtube-tv-check').onclick=async()=>{const button=$('#youtube-tv-check');button.disabled=true;try{await youtubeStatus(false);if(youtubeState.connected){panel.close();await loadYouTube();notify('Conta conectada. Carregando seus canais.')}else $('#youtube-tv-state').textContent='Ainda não recebemos a autorização. Conclua a escolha da conta no navegador do Mac.'}finally{button.disabled=false}};
-  return;
- }
+ if(youtubeState.deviceConfigured){youtubeDevicePanel();return}
+ if(!youtubeState.configured||typeof PeepTV!=='undefined'){youtubeSetup();return}
  const account=youtubeState.account||'Conta autorizada';
  show('<p class="eyebrow">YOUTUBE · SUA CONTA</p><h2>'+(youtubeState.connected?escapeHTML(account):'Escolher conta Google')+'</h2><p>O Google mostrará as contas disponíveis nesse navegador. Escolha a que deseja usar no painel e autorize a leitura de suas inscrições.</p><a class="panel-button" href="/api/youtube/connect">'+(youtubeState.connected?'Trocar conta no Google ↗':'Identificar e escolher conta ↗')+'</a>'+(youtubeState.connected?'<button id="youtube-load" class="text-button">Atualizar meus canais</button><button id="youtube-disconnect" class="text-button">Desconectar deste painel</button>':'')+'<p class="inline-note">A conta escolhida no painel pode ser diferente da conta usada no aplicativo YouTube da TV. A seleção permanece salva neste Mac até você desconectar.</p>');
  if($('#youtube-load'))$('#youtube-load').onclick=()=>{panel.close();loadYouTube()};
@@ -73,3 +70,47 @@ $('#youtube-section .section-heading').append(youtubeRefresh);
 $('#youtube-connect').onclick=youtubeAccount;
 // Só identifica contas autorizadas ao app. Cookies de outros sites não são consultados.
 youtubeStatus();
+
+// Device authorization stays inside this panel; only the phone opens Google.
+let youtubeDeviceStop=null;
+function stopYouTubeDevice(){youtubeDeviceStop?.();youtubeDeviceStop=null}
+panel.addEventListener('close',stopYouTubeDevice);
+window.addEventListener('peep-panel-replace',stopYouTubeDevice);
+async function youtubeDevicePost(action,body={},signal){
+ const response=await fetch('/api/youtube/device/'+action,{method:'POST',headers:{'Content-Type':'application/json','X-Konka-Action':'youtube-device'},body:JSON.stringify(body),signal});
+ const data=await response.json();if(!response.ok)throw Error(data.error||'Não foi possível consultar a conexão.');return data;
+}
+function youtubeDevicePanel(){
+ show('<p class="eyebrow">YOUTUBE · CONECTAR PELO CELULAR</p><h2>Sua conta, sem digitar na TV.</h2><p>Escaneie o QR code no celular, informe o código e autorize no Google. A TV confirma automaticamente.</p><div id="youtube-device-stage"><button id="youtube-device-start" class="panel-button">'+(youtubeState.connected?'Gerar código para trocar conta':'Gerar QR code e código')+'</button></div><p class="inline-note">Acesso somente de leitura às suas inscrições. A conta do app YouTube da TV permanece independente.</p>'+(youtubeState.connected?'<button id="youtube-disconnect" class="text-button">Desconectar deste painel</button>':''));
+ $('#youtube-device-start').onclick=startYouTubeDevice;if($('#youtube-disconnect'))$('#youtube-disconnect').onclick=disconnectYouTube;
+}
+async function startYouTubeDevice(){
+ const host=$('#youtube-device-stage');if(!host)return;stopYouTubeDevice();
+ let closed=false,timer=0,session=null,expires=0,interval=5;const controller=new AbortController();
+ const status=message=>{const node=$('#youtube-device-status');if(node)node.textContent=message};
+ const cleanup=()=>{closed=true;clearTimeout(timer);controller.abort();document.removeEventListener('visibilitychange',visible);if(session)youtubeDevicePost('cancel',{id:session.id}).catch(()=>{});session=null};
+ youtubeDeviceStop=cleanup;
+ host.innerHTML='<p id="youtube-device-status" role="status">Solicitando um código ao Google…</p>';
+ function schedule(){clearTimeout(timer);if(!closed&&!document.hidden)timer=setTimeout(poll,interval*1000)}
+ function visible(){if(document.hidden){clearTimeout(timer)}else schedule()}
+ function terminal(message){clearTimeout(timer);session=null;host.innerHTML='<p role="status">'+escapeHTML(message)+'</p><button id="youtube-device-retry" class="panel-button">Gerar novo código</button>';$('#youtube-device-retry').onclick=startYouTubeDevice}
+ async function poll(){
+  if(closed||!session||document.hidden)return;
+  if(Date.now()>=expires){const id=session.id;youtubeDevicePost('cancel',{id}).catch(()=>{});terminal('Este código expirou. Gere outro para continuar.');return}
+  try{
+   const data=await youtubeDevicePost('poll',{id:session.id},controller.signal);if(closed)return;
+   if(data.status==='connected'){session=null;stopYouTubeDevice();host.innerHTML='<h3>Conta conectada</h3><p role="status">Autorização recebida. Seus canais estão sendo carregados.</p><button id="youtube-device-done" class="panel-button">Ver meus vídeos</button>';$('#youtube-device-done').onclick=()=>panel.close();await youtubeStatus();return}
+   if(data.status!=='pending'){terminal(data.status==='denied'?'Você recusou a autorização no Google.':data.status==='expired'?'O código expirou. Gere um novo.':'O Google não concluiu a autorização. Confira o cliente OAuth e as permissões.');return}
+   interval=Math.max(5,Number(data.interval)||5);status('Aguardando autorização · código válido por mais '+Math.max(1,Math.ceil((expires-Date.now())/60000))+' min');schedule();
+  }catch(error){if(closed)return;status('Conexão interrompida. Tentaremos novamente enquanto o código estiver válido.');interval=Math.min(30,interval+5);schedule()}
+ }
+ document.addEventListener('visibilitychange',visible);
+ try{
+  const data=await youtubeDevicePost('start',{},controller.signal);if(closed)return;session=data;interval=Math.max(5,Number(data.interval)||5);expires=Date.now()+data.expiresIn*1000;
+  const url=new URL(data.verificationUrl);if(url.protocol!=='https:'||!['google.com','www.google.com','accounts.google.com'].includes(url.hostname))throw Error('Endereço de autorização inválido.');
+  host.innerHTML='<div class="youtube-device-grid"><div id="youtube-device-qr" aria-label="QR code para abrir o Google no celular"></div><div><span class="eyebrow">NO CELULAR</span><p>1. Aponte a câmera para o QR code.</p><p>2. No Google, informe este código:</p><strong id="youtube-device-code"></strong><p>3. Escolha sua conta e autorize.</p><small id="youtube-device-url"></small></div></div><p id="youtube-device-status" role="status">Aguardando autorização no celular…</p><button id="youtube-device-cancel" class="text-button">Cancelar</button>';
+  $('#youtube-device-code').textContent=data.userCode;$('#youtube-device-url').textContent=data.verificationUrl;$('#youtube-device-cancel').onclick=()=>panel.close();
+  try{const svg=await PeepQR.svg(data.verificationUrl);if(!closed&&$('#youtube-device-qr'))$('#youtube-device-qr').innerHTML=svg}catch{if(!closed)$('#youtube-device-qr').textContent='Abra no celular o endereço ao lado.'}
+  schedule();
+ }catch(error){if(!closed)terminal(error.message)}
+}
