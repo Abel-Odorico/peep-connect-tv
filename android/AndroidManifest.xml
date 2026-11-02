@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.peepconnect.tv.preview" android:versionCode="9" android:versionName="0.16.0-colecao">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.peepconnect.tv.preview" android:versionCode="10" android:versionName="0.16.1">
 
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />

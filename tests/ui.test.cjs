@@ -116,3 +116,69 @@ test('a saved static collection loads again after a fresh startup',async()=>{
   assert.deepEqual(errors,[]);
  }finally{dom.window.close()}
 });
+function press(w,d,key){d.activeElement.dispatchEvent(new w.KeyboardEvent('keydown',{key,bubbles:true,cancelable:true}))}
+test('D-pad enters cards, follows grid columns and restores focus and scroll per tab',async()=>{
+ const {dom,w,d,errors}=await open();try{
+  w.PeepStudio.themes('style');assert.equal(d.activeElement.dataset.studioTab,'style');
+  const nav=w.PeepStudio.themeNavigation,first=nav.rows();assert.equal(nav.rows(),first,'Row cache should be reused between keys');
+  press(w,d,'ArrowDown');assert.equal(d.activeElement.dataset.themeChoice,'crystal');
+  press(w,d,'ArrowRight');assert.equal(d.activeElement.dataset.themeChoice,'obsidiana');
+  press(w,d,'ArrowDown');assert.equal(d.activeElement.dataset.themeChoice,'adl-night');
+  press(w,d,'ArrowUp');assert.equal(d.activeElement.dataset.themeChoice,'obsidiana');
+  const scroller=d.querySelector('#studio-panel-style');scroller.scrollTop=120;
+  press(w,d,'ArrowUp');assert.equal(d.activeElement.dataset.studioTab,'style');
+  press(w,d,'ArrowRight');assert.equal(d.activeElement.dataset.studioTab,'background');
+  press(w,d,'ArrowLeft');assert.equal(scroller.scrollTop,120);
+  press(w,d,'ArrowDown');assert.equal(d.activeElement.dataset.themeChoice,'obsidiana');
+  assert.deepEqual(errors,[]);
+ }finally{dom.window.close()}
+});
+test('D-pad leaves selects, sliders and checkboxes without getting trapped or scanning the full dialog',async()=>{
+ const {dom,w,d,errors}=await open();try{
+  w.PeepStudio.themes('background');
+  w.HTMLElement.prototype.getClientRects=()=>{throw Error('Global spatial navigation must not run inside themes')};
+  const select=d.querySelector('#studio-tempo');select.focus();select.value='suave';
+  press(w,d,'ArrowRight');assert.equal(select.value,'vivo');assert.equal(d.body.dataset.dynamicTempo,'vivo');
+  press(w,d,'ArrowDown');assert.notEqual(d.activeElement,select,'Down must leave a native select');
+  d.querySelector('[data-studio-tab=glass]').click();const range=d.querySelector('[data-setting=glass]');range.focus();const value=Number(range.value);
+  press(w,d,'ArrowRight');assert.equal(Number(range.value),value+1);
+  press(w,d,'ArrowDown');assert.notEqual(d.activeElement,range,'Down must leave a native range input');
+  d.querySelector('[data-studio-tab=rotation]').click();const boxes=[...d.querySelectorAll('[data-living-theme]')];boxes[0].focus();
+  press(w,d,'ArrowRight');assert.equal(d.activeElement,boxes[1]);const checked=boxes[1].checked;
+  press(w,d,'Enter');assert.equal(boxes[1].checked,!checked,'OK must toggle a checkbox');
+  press(w,d,'ArrowDown');assert.notEqual(d.activeElement,boxes[1]);
+  assert.deepEqual(errors,[]);
+ }finally{dom.window.close()}
+});
+test('all five theme panes have a route to the footer and tabs; pagination never strands focus',async()=>{
+ const {dom,w,d,errors}=await open();try{
+  for(const tab of ['style','background','standby','rotation','glass']){
+   w.PeepStudio.themes(tab);const rows=w.PeepStudio.themeNavigation.rows();assert.ok(rows.length>0,tab);
+   rows[0][0].focus();press(w,d,'ArrowUp');assert.equal(d.activeElement.dataset.studioTab,tab);
+   rows.at(-1)[0].focus();press(w,d,'ArrowDown');assert.equal(d.activeElement.id,'studio-done');
+   press(w,d,'ArrowUp');assert.ok(rows.flat().includes(d.activeElement));
+   d.querySelector('#panel').close();assert.equal(w.PeepStudio.themeNavigation,null);
+  }
+  w.PeepStudio.themes('style');const next=d.querySelector('#studio-panel-style .studio-pagination button:last-child');next.focus();next.click();next.click();
+  assert.equal(next.disabled,true);assert.ok(d.activeElement.matches('.studio-theme'));assert.equal(d.activeElement.closest('[hidden]'),null);
+  press(w,d,'Escape');assert.equal(d.querySelector('#panel').open,false);
+  assert.deepEqual(errors,[]);
+ }finally{dom.window.close()}
+});
+
+test('replacing the theme dialog contents releases its local navigation',async()=>{
+ const {dom,w,d,errors}=await open();try{
+  w.PeepStudio.themes('glass');const brand=[...d.querySelectorAll('#studio-panel-glass button')].find(b=>b.textContent.includes('Marca e logo'));
+  assert.ok(brand);brand.click();assert.equal(w.PeepStudio.themeNavigation,null);assert.equal(d.querySelector('#panel').classList.contains('theme-studio-dialog'),false);
+  assert.ok(d.querySelector('#panel').open);assert.deepEqual(errors,[]);
+ }finally{dom.window.close()}
+});
+
+test('theme navigation pauses native telemetry work and resumes it after closing',async()=>{
+ const {dom,w,d,errors}=await open();try{
+  let calls=0;w.PeepTV.deviceMetrics=()=>{calls++;return JSON.stringify(fixture())};
+  w.PeepStudio.themes('style');await delay(1250);await w.PeepMetrics.refresh(true);assert.equal(calls,0);
+  d.querySelector('#panel').close();await w.PeepMetrics.refresh(true);assert.equal(calls,1);
+  assert.deepEqual(errors,[]);
+ }finally{dom.window.close()}
+});

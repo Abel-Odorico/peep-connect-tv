@@ -20,3 +20,26 @@ dialog.theme-studio-dialog{width:min(880px,92vw);height:min(690px,88vh);max-heig
 .studio015 .intro .subtitle{display:none}.studio015 .intro{padding-top:19px;padding-bottom:18px}.studio015 .dashboard>.service-banner{grid-column:1/-1;margin:0;padding:8px 12px}.studio015 .app-context-heading .eyebrow{margin-bottom:6px}
 
 html.tv-mode dialog.theme-studio-dialog{width:min(850px,92vw);height:88vh}
+
+/* 0.16.1 — stable D-pad rows, explicit focus, independent tab scroll surfaces. */
+.theme-studio-dialog .studio-theme-art{box-shadow:none;background-image:linear-gradient(135deg,var(--preview-base),var(--preview-secondary))}
+.theme-studio-dialog :is(button,input,select){transition:none!important;scroll-margin:9px}
+.theme-studio-dialog :is(button,input,select):is(:hover,:focus,:focus-visible){transform:none!important;filter:none!important}
+.theme-studio-dialog .theme-nav-current,.theme-studio-dialog :is(button,input,select):focus-visible{outline:2px solid var(--accent);outline-offset:2px;box-shadow:none}
+.theme-studio-dialog .theme-nav-row{background:color-mix(in srgb,var(--accent) 7%,transparent);border-radius:8px;outline:1px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:2px}
+.theme-studio-dialog .theme-nav-row input[type=checkbox]{outline:none}
+.theme-studio-dialog .studio-tab-body{overscroll-behavior:contain;overflow-anchor:none;scroll-behavior:auto;scrollbar-gutter:stable;padding:4px 8px 10px 4px}
+.theme-studio-dialog .studio-pagination{min-height:37px}
+.theme-studio-dialog #studio-navigation-hint{font-size:9px;line-height:1.5;color:var(--studio-muted);max-width:75%}
+.theme-studio-dialog .studio-tabs>button[aria-selected=true]{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.theme-studio-dialog .studio-tabs>.theme-nav-current{outline-offset:-3px}
+
+.theme-studio-dialog .prisma-palette-grid>button>span{background:linear-gradient(125deg,var(--palette-a),var(--palette-b) 58%,var(--palette-c))}
+.theme-studio-dialog .horizon-scene-art i{background:linear-gradient(130deg,var(--flow-a,#214351),var(--flow-b,#456c7b) 50%,var(--flow-c,#7894a2))}
+html.tv-mode dialog.theme-studio-dialog{box-shadow:none}
+.theme-studio-dialog .studio-dialog-heading h2{font-size:24px;margin-bottom:16px}
+
+/* Keep each tab's layout and scroll position, instead of detaching its layout tree. */
+.theme-studio-dialog .studio-tab-body{position:relative;overflow:hidden;padding:0;scrollbar-gutter:auto;contain:strict}
+.theme-studio-dialog .studio-tab-body>[role=tabpanel]{position:absolute;inset:0;display:block;overflow:auto;padding:4px 8px 12px 4px;contain:layout paint;overscroll-behavior:contain;overflow-anchor:none;scroll-behavior:auto;scrollbar-width:thin;scrollbar-gutter:stable}
+.theme-studio-dialog .studio-tab-body>[role=tabpanel][hidden]{display:block!important;visibility:hidden;pointer-events:none}

@@ -4,6 +4,7 @@
 - `app.js`: catálogo de apps, preferências, navegação espacial, show/dialog, save.
 - `connected.js`: API local e atualização base do sistema. `realtime.js`: dono da coleta nativa de 2 s e fallback ADB de 5 s. `runtime.js`: coordenação sem sobreposição e visibilidade.
 - `collections.js` / `collections.css`: três temas e seus cenários estáticos/animados; `themeSelected` prepara preferências e os hooks de horizons/idle-prisma aplicam a composição. `wallpapers.js` resolve a arte local. Escolher paleta Prisma libera o cenário da coleção no descanso.
+- `theme-navigation.js`: foco local por linhas e colunas, seletores/sliders, rolagem independente de cada painel. `app.js` emite `peep-panel-replace` antes de substituir o conteúdo, liberando esse controlador.
 - `studio.js`: temas em cinco abas, paginação, movimento explícito, conteúdo relacionado ao app focado e ordem da home.
 - `performance.js`: CPU ADB e histórico legado. `performance-pro.js`: apresentação de Performance e tráfego. `network-quality.js`: testes HTTP manuais de internet; motor Cloudflare lazy em dist/vendor.
 - `living.js`, `idle-rich.js`, `horizons.js`, `idle-prisma.js`: cadeia histórica do descanso; preservar entrada, saída, teclado e IDs do clima. Corrigir no proprietário em vez de criar mais um wrapper.
