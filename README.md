@@ -2,7 +2,7 @@
 
 Experiência de TV em HTML, CSS e JavaScript, com um aplicativo Android WebView e um serviço Python local. Interface para controle remoto, favoritos, temas, fundos animados, descanso, clima, TMDB, YouTube e diagnóstico do dispositivo.
 
-**Interface atual: 0.16 — Coleção de cenários. APK nativo: 0.15.1.** Projeto em desenvolvimento. O APK abre a experiência; ainda não substitui automaticamente o launcher HOME do Android TV. A versão conectada depende do serviço local no computador e da conexão ADB.
+**Interface atual: 0.16 — Coleção de cenários. APK nativo: 0.16.0.** Projeto em desenvolvimento. O APK abre a experiência; ainda não substitui automaticamente o launcher HOME do Android TV. A versão conectada depende do serviço local no computador e da conexão ADB.
 
 ## Executar
 
