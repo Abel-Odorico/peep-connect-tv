@@ -55,12 +55,16 @@
   richSetText('market-status',marketError?'Não foi possível renovar as cotações. Os valores salvos estão identificados nos cards.':valid+' de 3 fontes responderam. Consulte o horário de cada referência; consultar agora não torna a cotação instantânea.');
   for(const id of ['usd','ibov','usdc']){
    const card=$('#market-'+id),visual=card.querySelector('.market-visual'),item=marketData?.items?.[id];
-   const count=id==='ibov'?(item?.history||[]).filter(p=>Number.isFinite(p?.value)).length:marketSeries[id].length;
+   const values=(id==='ibov'?(item?.history||[]).map(p=>p?.value):marketSeries[id]).filter(Number.isFinite),count=values.length;
    const available=!!item?.ok&&count>=2;visual.dataset.history=String(available);
    const chart=visual.querySelector('svg');chart.toggleAttribute('hidden',!available);
+   let range=visual.querySelector('.amb-chart-range');
+   if(!range){range=document.createElement('span');range.className='amb-chart-range';visual.append(range)}
+   range.hidden=!available;
+   if(available){const format=value=>value.toLocaleString('pt-BR',{minimumFractionDigits:id==='ibov'?0:4,maximumFractionDigits:id==='ibov'?0:4})+(id==='ibov'?' pts':id==='usd'?' BRL':' USD');range.replaceChildren();for(const [label,value]of [['Mín',Math.min(...values)],['Máx',Math.max(...values)]]){const part=document.createElement('span');part.textContent=label+' '+format(value);range.append(part)}range.setAttribute('aria-label','Faixa do histórico exibido')}else range.replaceChildren();
    const caption=visual.querySelector('small');
    if(id==='ibov')caption.textContent=available?count+' pregões · Yahoo Finance':'Histórico indisponível';
-   else if(!available)caption.textContent=item?.ok?'A curva aparece após duas consultas':'Sem histórico disponível';
+   else if(!available)caption.textContent=item?.ok?'Aguardando a próxima amostra da fonte':'Sem histórico disponível';
   }
  }
  function paintAmbientWeather(){

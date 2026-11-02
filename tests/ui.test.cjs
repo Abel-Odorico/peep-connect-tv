@@ -212,7 +212,10 @@ test('Ambient market charts show only provider history or distinct samples from 
   w.eval('paintMarkets()');assert.equal(d.querySelector('#market-usd .market-visual').dataset.history,'false','Repeating a response is not another sample');
   data.items.usd.sourceAt+=60;data.items.usd.value=5.2;w.eval('marketData='+JSON.stringify(data)+';paintMarkets()');
   assert.equal(d.querySelector('#market-usd .market-visual').dataset.history,'true');assert.ok(!d.querySelector('#market-usd .market-visual svg').hasAttribute('hidden'));
+  assert.match(d.querySelector('#market-usd .amb-chart-range').textContent,/Mín 5,1000 BRLMáx 5,2000 BRL/);
+  assert.match(d.querySelector('#market-ibov .amb-chart-range').textContent,/118\.000 pts/);
   data.items.usd={ok:false,error:'Fonte indisponível'};w.eval('marketData='+JSON.stringify(data)+';paintMarkets()');assert.equal(d.querySelector('#market-usd .market-visual').dataset.history,'false');assert.equal(d.querySelector('#usd-price').textContent,'—');assert.equal(d.querySelector('#amb-usd-state').textContent,'Indisponível');
+  assert.ok(d.querySelector('#market-usd .amb-chart-range').hidden);assert.equal(d.querySelector('#market-usd .amb-chart-range').textContent,'');
   assert.deepEqual(errors,[]);
  }finally{dom.window.close()}
 });

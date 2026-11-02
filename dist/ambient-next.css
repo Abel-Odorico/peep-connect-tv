@@ -38,3 +38,11 @@ body[data-theme=adl-day] #ambient-dashboard.amb-next,body.horizon-light #ambient
 body[data-theme=adl-day] .amb-header,body.horizon-light .amb-header{background:var(--amb-surface);border:1px solid var(--amb-line);padding:18px;border-radius:17px}
 body[data-theme=adl-day] .amb-market-heading,body.horizon-light .amb-market-heading{background:var(--amb-surface);border:1px solid var(--amb-line);padding:14px 16px;border-radius:14px}body[data-theme=adl-day] .amb-next #market-status,body.horizon-light .amb-next #market-status{background:var(--amb-surface);padding:10px 14px;border-radius:10px}
 .amb-next svg *{animation:none!important}.amb-refresh-icon{display:flex;align-items:center}.amb-refresh-control>button[aria-busy=true] .amb-refresh-icon{animation:amb-refresh-turn .8s linear infinite}@keyframes amb-refresh-turn{to{transform:rotate(360deg)}}
+
+/* Contexto de escala sem inventar amostras ou sugerir variação absoluta. */
+.amb-next .amb-chart-range{display:flex;justify-content:space-between;gap:8px;margin-top:7px;font-size:7px;font-variant-numeric:tabular-nums;color:var(--amb-muted)}
+.amb-next .amb-chart-range[hidden]{display:none}
+.amb-next .market-visual[data-history=false]{min-height:36px;background:none;justify-content:center}
+.amb-next .market-visual[data-history=false]>small{max-width:none;border-left:2px solid var(--quote);padding-left:8px}
+.amb-next .amb-markets .market-card:focus-visible{outline:3px solid var(--quote);outline-offset:4px;box-shadow:inset 0 0 0 1px var(--quote)}
+@media(min-width:1250px){.amb-next .amb-chart-range{font-size:10px}.amb-next .market-visual[data-history=false]{min-height:45px}}
