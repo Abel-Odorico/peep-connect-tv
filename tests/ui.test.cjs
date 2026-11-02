@@ -226,3 +226,24 @@ test('Ambient refresh keeps its loading state until all sources finish and block
   await w.PeepAmbient.refresh();assert.equal(calls,1);release();await pending;assert.equal(button.disabled,false);assert.equal(button.getAttribute('aria-busy'),'false');assert.deepEqual(errors,[]);
  }finally{dom.window.close()}
 });
+test('Google account action opens setup when OAuth is missing and TV handoff when configured',async()=>{
+ const {dom,w,d,errors}=await open();try{
+  await w.youtubeAccount();assert.ok(d.querySelector('#youtube-check'));assert.match(d.querySelector('dialog').textContent,/cliente OAuth/);
+  const fetch=w.fetch;w.fetch=async input=>String(input).includes('/api/youtube/status')?new Response(JSON.stringify({configured:true,connected:false,apiConfigured:true}),{headers:{'Content-Type':'application/json'}}):fetch(input);
+  await w.youtubeAccount();assert.ok(d.querySelector('#youtube-tv-check'));assert.equal(d.querySelector('a[href="/api/youtube/connect"]'),null,'TV must not attempt embedded OAuth');
+  await d.querySelector('#youtube-tv-check').onclick();assert.match(d.querySelector('#youtube-tv-state').textContent,/Ainda não recebemos/);assert.equal(d.querySelector('#youtube-tv-check').disabled,false);
+  assert.deepEqual(errors,[]);
+ }finally{dom.window.close()}
+});
+test('Collection motion gracefully preserves original artwork when GPU is unavailable',async()=>{
+ const {dom,w,d,errors}=await open();try{
+  for(const id of ['obsidiana','solsticio','atlantida']){
+   w.PeepCollections.selectBackdrop(id,'animated');
+   assert.equal(d.querySelector('.collection-home-stage').dataset.collection,id);
+   assert.ok(d.querySelector('.collection-home-stage .collection-photo'));
+   assert.equal(d.querySelectorAll('.collection-current,.collection-contours').length,0,'No sliding duplicate of the artwork');
+  }
+  assert.equal(w.PeepCollectionMotion.inspect().running,false);assert.equal(d.querySelectorAll('.collection-material').length,0);
+  assert.deepEqual(errors,[]);
+ }finally{dom.window.close()}
+});

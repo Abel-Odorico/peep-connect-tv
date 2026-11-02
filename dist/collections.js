@@ -14,18 +14,13 @@
  const isMotionId=id=>String(id||'').startsWith('collection-')&&!!getMotion(id);
  const home=document.createElement('div');home.className='collection-stage collection-home-stage';home.hidden=true;home.setAttribute('aria-hidden','true');horizonStage.append(home);
  const rest=document.createElement('div');rest.className='collection-stage collection-idle-stage';rest.hidden=true;rest.setAttribute('aria-hidden','true');idle.prepend(rest);
- const art={
-  obsidiana:'<path d="M-90 820C280 940 760 840 1130 565S1450 160 1660-130"/><path d="M-70 866C360 969 790 862 1160 600S1500 220 1730-100"/>',
-  solsticio:'<ellipse cx="1235" cy="405" rx="365" ry="338"/><ellipse cx="1235" cy="405" rx="423" ry="400"/><path d="M-100 860C300 580 495 960 1015 740S1360 500 1750 645"/>',
-  atlantida:'<path d="M-120 840C260 960 400 590 710 785S1130 985 1260 608S1260 120 1690 40"/><path d="M-100 895C320 1070 470 645 760 830S1190 940 1330 575S1310 210 1750 90"/>'
- };
  function configure(surface,pack){
   if(surface.dataset.collection===pack?.id)return;
   surface.replaceChildren();surface.dataset.collection=pack?.id||'';
   if(!pack)return;
   surface.style.setProperty('--collection-image','url("'+pack.wallpaper+'")');
   surface.style.setProperty('--collection-base',pack.colors[0]);surface.style.setProperty('--collection-gold',pack.accent);
-  surface.innerHTML='<div class="collection-photo"></div><div class="collection-current"></div><div class="collection-contours"><svg viewBox="0 0 1600 900" preserveAspectRatio="none">'+art[pack.id]+'</svg></div><div class="collection-lens"></div><div class="collection-shade"></div>';
+  surface.innerHTML='<div class="collection-photo"></div><div class="collection-lens"></div><div class="collection-shade"></div>';
  }
  function applyHome(){
   const pack=isMotionId(prefs.motionWallpaper)?getMotion(prefs.motionWallpaper):null;
@@ -33,6 +28,7 @@
   home.dataset.moving=String(horizonMotionAllowed()&&prefs.dynamicTempo!=='parado');
   document.body.dataset.collectionTheme=get(prefs.theme)?.id||'';
   if(get(prefs.theme))document.body.style.setProperty('--collection-base',get(prefs.theme).colors[0]);
+  window.PeepCollectionMotion?.sync();
  }
  function paintIdle(){
   const pack=get(prefs.idleCollection),show=!!pack&&prefs.idleStyle!=='quiet';
@@ -42,6 +38,7 @@
    for(const [key,value]of Object.entries({'--p-a':pack.colors[1],'--p-b':pack.accent,'--p-c':pack.colors[3],'--p-base':pack.colors[0]}))idle.style.setProperty(key,value);
    richSetText('prisma-palette-name',pack.name);
   }
+  window.PeepCollectionMotion?.sync();
   const tag=idle.querySelector('.prisma-header-tag');if(tag)for(const node of tag.childNodes)if(node.nodeType===Node.TEXT_NODE&&node.textContent.trim())node.textContent=show?pack.name.toUpperCase()+' ':'PRISMA ';
  }
  function nextIdle(delta){const index=Math.max(0,packs.findIndex(p=>p.id===prefs.idleCollection));prefs.idleCollection=packs[(index+delta+packs.length)%packs.length].id;paintIdle()}

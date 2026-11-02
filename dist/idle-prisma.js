@@ -58,7 +58,7 @@
  const weatherRegion=document.createElement('div');weatherRegion.className='prisma-weather-dock';
  shell.insertBefore(weatherRegion,idle.querySelector('.rich-forecast'));weatherRegion.append(weatherCurrent,idle.querySelector('.rich-forecast'));
  const forecastLabel=idle.querySelector('.rich-forecast-heading>span');forecastLabel.textContent='NOS PRÓXIMOS DIAS';
- const header=idle.querySelector('.rich-header');header.insertAdjacentHTML('beforeend','<span class="prisma-header-tag"><i></i>PRISMA <small>0.16.2</small></span>');
+ const header=idle.querySelector('.rich-header');header.insertAdjacentHTML('beforeend','<span class="prisma-header-tag"><i></i>PRISMA <small>0.16.3</small></span>');
  const footer=idle.querySelector('.rich-footer');footer.querySelector('.horizon-remote-hint').innerHTML='← → painéis <span>·</span> ↑ ↓ cores <span>·</span> OK voltar';
  const editButton=document.createElement('button');editButton.className='prisma-tune';editButton.dataset.idleAction='prisma-settings';editButton.setAttribute('aria-label','Personalizar tela de descanso');editButton.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="15" cy="17" r="3"/></svg>';idle.querySelector('.rich-top-actions').prepend(editButton);
 

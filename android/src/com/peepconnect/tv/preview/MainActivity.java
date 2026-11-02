@@ -82,7 +82,6 @@ public final class MainActivity extends Activity {
                     "window.openApp=function(app){PeepTV.launchApp(app.id)};" +
                     "var el=document.querySelector('#store');if(el)el.onclick=function(){PeepTV.openSettings('store')};" +
                     "el=document.querySelector('#system-settings');if(el)el.onclick=function(){PeepTV.openSettings('system')};" +
-                    "el=document.querySelector('#youtube-connect');if(el)el.onclick=function(){PeepTV.accountHelp()};" +
                     "var first=document.querySelector('.app-card');if(first)first.focus();})()";
                 view.evaluateJavascript(script, null);
             }
@@ -186,7 +185,7 @@ public final class MainActivity extends Activity {
                 try { startActivity(intent); } catch (ActivityNotFoundException error) { message("Atalho indisponível nesta TV."); }
             });
         }
-        @JavascriptInterface public void accountHelp() { message("Autorize sua conta do YouTube no painel do Mac. Os canais serão compartilhados com esta TV."); }
+        @JavascriptInterface public void accountHelp() { runOnUiThread(() -> web.evaluateJavascript("if(typeof youtubeAccount==='function')youtubeAccount()", null)); }
         @JavascriptInterface public void close() { runOnUiThread(() -> finish()); }
     }
 
