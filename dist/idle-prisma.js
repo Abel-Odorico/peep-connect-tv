@@ -69,9 +69,9 @@
   idle.dataset.prismaMotion=String(horizonMotionAllowed());idle.dataset.prismaQuiet=String(prefs.idleStyle==='quiet');
   for(const [key,value]of Object.entries({'--p-a':p.colors[0],'--p-b':p.colors[1],'--p-c':p.colors[2],'--p-base':p.base}))homeStage.style.setProperty(key,value);
   richSetText('prisma-palette-name',p.name);idle.querySelector('.rich-greeting').textContent='AGORA É TEMPO DE DESACELERAR';
-  if(climateTitle.textContent!=='Contagem, MG')climateTitle.textContent='Contagem, MG';
+  if(climateTitle.textContent!=='Contagem, MG')climateTitle.textContent='Contagem, MG';window.PeepCollections?.paintIdle();
  }
- function cyclePrisma(delta){const index=Math.max(0,palettes.findIndex(p=>p.id===prefs.prismaPalette));prefs.prismaPalette=palettes[(index+delta+palettes.length)%palettes.length].id;lastCycle=Date.now();lastInteraction=Date.now();applyPrisma();save()}
+ function cyclePrisma(delta){if(prefs.idleCollection&&window.PeepCollections){lastCycle=Date.now();lastInteraction=Date.now();PeepCollections.nextIdle(delta);save();return}prefs.idleCollection='';const index=Math.max(0,palettes.findIndex(p=>p.id===prefs.prismaPalette));prefs.prismaPalette=palettes[(index+delta+palettes.length)%palettes.length].id;lastCycle=Date.now();lastInteraction=Date.now();applyPrisma();save()}
  function paintTemperatureRange(){
   const daily=weather?.daily,target=idle.querySelector('#rich-forecast-days');if(!target)return;
   const newSignature=JSON.stringify([daily,prefs.idleView]);if(signature===newSignature&&(!target.querySelector('.rich-day')||target.querySelector('.prisma-temp-range')))return;signature=newSignature;
@@ -96,7 +96,7 @@
 
  function prismaOptions(){return '<section class="prisma-settings"><p class="eyebrow">PRISMA · TELA DE DESCANSO</p><h3>Cor e movimento no seu ritmo</h3><p>Escolha a luz que vai preencher sua tela. Selecionar uma paleta ativa o descanso colorido.</p><div class="prisma-palette-grid">'+palettes.map(p=>'<button data-prisma-palette="'+p.id+'" aria-pressed="'+(prefs.prismaPalette===p.id)+'"><span style="--palette-a:'+p.colors[0]+';--palette-b:'+p.colors[1]+';--palette-c:'+p.colors[2]+'"></span><b>'+p.name+'</b></button>').join('')+'</div><label class="option">Presença das cores<select id="prisma-intensity"><option value="vivid">Vibrante</option><option value="soft">Suave</option></select></label><label class="option">Movimento<select id="prisma-speed"><option value="slow">Contemplativo</option><option value="flow">Mais fluido</option></select></label><label class="option">Alternar cores a cada 3 minutos<input id="prisma-cycle" type="checkbox" '+(prefs.idleSceneCycle?'checked':'')+'></label><button id="prisma-preview" class="panel-button">Visualizar descanso</button><button id="prisma-home-wallpaper" class="text-button">Usar Prisma como papel de parede</button><p class="inline-note">No descanso: ← → muda o painel, ↑ ↓ troca as cores. O modo econômico e movimento reduzido mantêm a composição estática.</p></section>'}
  function bindPrismaOptions(){
-  document.querySelectorAll('[data-prisma-palette]').forEach(b=>b.onclick=()=>{prefs.prismaPalette=b.dataset.prismaPalette;prefs.idleStyle='aurora';applyPrisma();save();document.querySelectorAll('[data-prisma-palette]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)))});
+  document.querySelectorAll('[data-prisma-palette]').forEach(b=>b.onclick=()=>{prefs.idleCollection='';prefs.prismaPalette=b.dataset.prismaPalette;prefs.idleStyle='aurora';applyPrisma();save();document.querySelectorAll('[data-prisma-palette]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)))});
   const intensity=$('#prisma-intensity'),speed=$('#prisma-speed');if(!intensity||!speed)return;
   intensity.value=prefs.prismaIntensity;speed.value=prefs.prismaSpeed;
   intensity.onchange=e=>{prefs.prismaIntensity=e.target.value;applyPrisma();save()};speed.onchange=e=>{prefs.prismaSpeed=e.target.value;applyPrisma();save()};

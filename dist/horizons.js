@@ -24,9 +24,9 @@ function horizonMotionAllowed(){return prefs.motion!==false&&prefs.performance!=
 function horizonApply(){
  const theme=horizonThemes.find(t=>t.id===prefs.theme);document.body.classList.toggle('horizon-theme',!!theme);document.body.classList.toggle('horizon-light',theme?.mode==='light');
  if(theme){for(const [name,value]of Object.entries({base:theme.colors[0],surface:theme.surface,ink:theme.ink,muted:theme.muted}))document.body.style.setProperty('--h-'+name,value)}
- const selected=horizonScenes.some(s=>s.id===prefs.motionWallpaper)?prefs.motionWallpaper:'off';document.body.dataset.motionScene=selected;horizonStage.dataset.motion=selected;horizonStage.hidden=selected==='off';
+ const selected=(horizonScenes.some(s=>s.id===prefs.motionWallpaper)||window.PeepCollections?.isMotionId(prefs.motionWallpaper))?prefs.motionWallpaper:'off';document.body.dataset.motionScene=selected;horizonStage.dataset.motion=selected;horizonStage.hidden=selected==='off';
  document.body.classList.toggle('horizon-pan',prefs.motionWallpaper==='landscape');document.body.classList.toggle('horizon-motion-reduced',!horizonMotionAllowed());
- document.body.classList.toggle('horizon-hidden',document.hidden);horizonStage.style.setProperty('--motion-duration',prefs.motionPace==='slow'?'90s':'55s');save();
+ document.body.classList.toggle('horizon-hidden',document.hidden);horizonStage.style.setProperty('--motion-duration',prefs.motionPace==='slow'?'90s':'55s');window.PeepCollections?.apply();save();
 }
 const horizonBaseApply=apply;apply=function(){horizonBaseApply();horizonApply()};
 function horizonSwatches(colors){return colors.map(c=>'<i style="background:'+c+'"></i>').join('')}

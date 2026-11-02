@@ -9,13 +9,14 @@ function fixture(){
  const at=Date.now()/1000;
  return {connected:true,at,source:'Android nativo',sampleId:1,model:'Test TV',android:'14',ram:{totalBytes:1610612736,availableBytes:350000000},network:{interface:'wifi',transport:'Wi-Fi',rssi:-50,rxLinkMbps:433,txLinkMbps:433,frequencyMHz:5200,traffic:{downloadMbps:.0004,uploadMbps:0}},storage:{availableBytes:4000000000},uptimeSeconds:3600};
 }
-async function open(){
+async function open(initialPrefs){
  let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
  const files=[...html.matchAll(/<script src="([^"]+)" defer><\/script>/g)].map(m=>m[1]);
  html=html.replace(/<script src="[^"]+" defer><\/script>/g,'').replace(/<link[^>]*stylesheet[^>]*>/g,'');
  html=html.replace('</body>','<script>'+files.map(f=>fs.readFileSync(path.join(root,f),'utf8')).join('\n').replaceAll('</script','<\\/script')+'</script></body>');
  const errors=[];const console=new VirtualConsole();console.on('jsdomError',e=>errors.push(e.message));
  const dom=new JSDOM(html,{url:'http://127.0.0.1:8770/?tv=1',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:console,beforeParse(w){
+  if(initialPrefs){w.localStorage.setItem('konka-glass-v1',JSON.stringify(initialPrefs));w.Image=class{set src(value){this._src=value;w.setTimeout(()=>this.onload?.(),0)}get src(){return this._src}}}
   w.Response=Response;w.AbortSignal=AbortSignal;w.AbortController=AbortController;
   w.matchMedia=()=>({matches:false});w.HTMLElement.prototype.scrollIntoView=()=>{};
   w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'))};
@@ -74,6 +75,44 @@ test('Internet tests preserve device origin, convert bits, cancel and retain com
   await w.PeepNetwork.start();const pending=instance;w.PeepNetwork.cancel();pending.onFinish(results);
   assert.equal(pending.paused,true);assert.equal(w.PeepNetwork.running,false);assert.equal(w.PeepNetwork.last.at,savedAt);
   await w.PeepNetwork.start('latency');assert.ok(instance.config.measurements.every(m=>m.type==='latency'));instance.onFinish(results);assert.equal(w.PeepNetwork.last.downloadMbps,80);assert.equal(w.PeepNetwork.last.bandwidthAt,savedAt);await w.PeepNetwork.start();const empty={...results,getDownloadBandwidthPoints:()=>[],getUploadBandwidthPoints:()=>[],getDownLoadedLatencyPoints:()=>[],getUpLoadedLatencyPoints:()=>[]};instance.onResultsChange=instance.onResultsChange;instance.onFinish(empty);assert.equal(w.PeepNetwork.last.bandwidthAt,savedAt);assert.ok(d.querySelector('#quality-status').textContent.includes('incompleta'));await w.PeepNetwork.start();d.querySelector('#panel').close();assert.equal(w.PeepNetwork.running,false);
+  assert.deepEqual(errors,[]);
+ }finally{dom.window.close()}
+});
+test('three collection themes select paired still/motion art and retain existing theme contracts',async()=>{
+ const {dom,w,d,errors}=await open();try{
+  assert.equal(w.PeepCollections.packs.length,3);
+  assert.equal(w.PeepCollections.packs.filter(p=>p.extravagant).length,2);
+  w.PeepStudio.themes('style');
+  for(const id of ['obsidiana','solsticio','atlantida']){
+   const card=d.querySelector('[data-theme-choice='+id+']');assert.equal(card.hidden,false,'New themes must be on the first page');card.click();
+   assert.equal(d.body.dataset.theme,id);assert.equal(d.body.dataset.collectionTheme,id);
+   const stage=d.querySelector('.collection-home-stage');assert.equal(stage.hidden,false);assert.equal(stage.dataset.collection,id);
+   assert.ok(stage.style.getPropertyValue('--collection-image').includes(id+'.png'));
+   assert.equal(d.querySelector('#collection-theme-mode').disabled,false);
+   const mode=d.querySelector('#collection-theme-mode');mode.value='static';mode.dispatchEvent(new w.Event('change'));
+   assert.equal(stage.hidden,true);assert.equal(d.body.dataset.motionScene,'off');
+   mode.value='animated';mode.dispatchEvent(new w.Event('change'));assert.equal(stage.hidden,false);
+  }
+  const bg=d.querySelector('[data-studio-tab=background]');bg.click();
+  assert.equal(d.querySelectorAll('[data-collection-background]').length,6);
+  d.querySelector('[data-collection-background=solsticio][data-collection-mode=static]').click();
+  assert.equal(d.querySelector('.collection-home-stage').hidden,true);
+  d.querySelector('[data-collection-background=solsticio][data-collection-mode=animated]').click();
+  assert.equal(d.querySelector('.collection-home-stage').dataset.collection,'solsticio');
+  d.querySelector('#studio-tempo').value='parado';d.querySelector('#studio-tempo').dispatchEvent(new w.Event('change'));
+  assert.equal(d.querySelector('.collection-home-stage').dataset.moving,'false');d.querySelector('[data-collection-background=solsticio][data-collection-mode=animated]').click();assert.equal(d.querySelector('.collection-home-stage').dataset.moving,'true');
+  d.querySelector('[data-studio-tab=standby]').click();const choice=d.querySelector('#collection-idle-choice');choice.value='atlantida';choice.dispatchEvent(new w.Event('change'));
+  assert.equal(d.querySelector('.collection-idle-stage').dataset.collection,'atlantida');
+  assert.equal(d.querySelector('#prisma-palette-name').textContent,'Atlântida');w.PeepPrisma.next(1);assert.equal(d.querySelector('.collection-idle-stage').dataset.collection,'obsidiana');
+  d.querySelector('[data-prisma-palette=candy]').click();assert.equal(d.querySelector('.collection-idle-stage').hidden,true,'Choosing a Prisma palette must release the collection backdrop');
+  assert.deepEqual(errors,[]);
+ }finally{dom.window.close()}
+});
+
+test('a saved static collection loads again after a fresh startup',async()=>{
+ const {dom,d,errors}=await open({theme:'solsticio',collectionWallpaper:'solsticio',wallpaperSource:'collection',motionWallpaper:'off',themeSceneMode:'static'});try{
+  await delay(35);assert.ok(d.querySelector('.landscape').style.backgroundImage.includes('collections/solsticio.png'));
+  assert.equal(d.querySelector('.collection-home-stage').hidden,true);
   assert.deepEqual(errors,[]);
  }finally{dom.window.close()}
 });

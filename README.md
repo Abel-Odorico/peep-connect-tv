@@ -2,7 +2,7 @@
 
 Experiência de TV em HTML, CSS e JavaScript, com um aplicativo Android WebView e um serviço Python local. Interface para controle remoto, favoritos, temas, fundos animados, descanso, clima, TMDB, YouTube e diagnóstico do dispositivo.
 
-**Versão atual: 0.15.1 — fluidez e qualidade de rede.** Projeto em desenvolvimento. O APK abre a experiência; ainda não substitui automaticamente o launcher HOME do Android TV. A versão conectada depende do serviço local no computador e da conexão ADB.
+**Interface atual: 0.16 — Coleção de cenários. APK nativo: 0.15.1.** Projeto em desenvolvimento. O APK abre a experiência; ainda não substitui automaticamente o launcher HOME do Android TV. A versão conectada depende do serviço local no computador e da conexão ADB.
 
 ## Executar
 
@@ -22,6 +22,20 @@ python3 android/instalar_tv.py --device IP_DA_TV:PORTA_DE_CONEXAO
 ```
 
 O código de pareamento é informado no prompt do ADB. O instalador valida modelo/plataforma, conserva a assinatura local e não altera HOME, firmware ou pacotes do sistema. Consulte [android/README.md](android/README.md).
+
+## Coleção 0.16
+
+Três temas com arte original, papel estático e cenário animado correspondente:
+
+- **Obsidiana**: pedra azul, ouro e reflexos sobre a água; composição mais contida.
+- **Solstício**: extravagante, com portal solar, terracota, vinho e dunas douradas.
+- **Atlântida**: extravagante, com ondas monumentais em petróleo e contornos de luz.
+
+Em **Tema → Estilo**, os três aparecem na primeira página. Selecionar um deles combina as cores, o cenário e o descanso. Use o seletor para alternar entre arte estática e animada. Em **Fundos → Cenários exclusivos**, é possível escolher qualquer arte independentemente do tema; em **Descanso**, o cenário também pode ser escolhido ou substituído por uma paleta Prisma.
+
+Animação em três camadas CSS: deslocamento da cena, corrente/primeiro plano e contornos independentes. Sem vídeos, reprodução automática de mídia ou JavaScript por quadro. Abrir um painel pausa o fundo; movimento reduzido preserva a composição estática. Escolher explicitamente **Animado** retoma o movimento do aplicativo, respeitando a preferência do sistema.
+
+As artes originais estão em `dist/assets/collections`, com dimensões, origem e SHA-256 no manifesto. Esta atualização é de interface; não altera a bridge ou exige reinstalar o APK. Recarregue a página no computador ou reabra o processo da experiência na TV para carregar os arquivos novos.
 
 ## Configuração privada
 

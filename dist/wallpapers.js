@@ -32,10 +32,12 @@ async function loadCinemaWallpapers(revision){
 function showCinemaWallpaper(revision=wallpaperRevision){const item=cinemaImages[cinemaImageIndex];if(!item)return;return setWallpaperImage(item.backdrop.replace('/w780/','/w1280/'),item.title+' · '+(item.type==='tv'?'Série':'Filme')+' · TMDB',revision)}
 function paintWallpaper(){
  const source=prefs.wallpaperSource||'legacy';document.body.dataset.wallpaper=source;
- const key=[source,prefs.cinemaKind,prefs.scene,prefs.customWallpaper?'custom':''].join(':');
+ if(source==='collection'&&!window.PeepCollections?.get(prefs.collectionWallpaper))return;
+ const key=[source,prefs.cinemaKind,prefs.scene,prefs.customWallpaper?'custom':'',prefs.collectionWallpaper].join(':');
  if(wallpaperCurrent&&source!=='legacy'&&!prefs.customWallpaper)$('.landscape').style.backgroundImage='url('+JSON.stringify(wallpaperCurrent)+')';
  if(key===wallpaperKey)return;wallpaperKey=key;const revision=++wallpaperRevision;
  if(source==='tmdb'){loadCinemaWallpapers(revision);return}
+ if(source==='collection'){const item=window.PeepCollections?.get(prefs.collectionWallpaper);if(item)setWallpaperImage(item.wallpaper,item.name+' · arte original',revision);return}
  if(prefs.customWallpaper){wallpaperCurrent='';return}
  if(source==='photo'){const scene=landscapeCatalog.find(s=>s.id===prefs.scene)||landscapeCatalog[0];setWallpaperImage(landscapeURL(scene,1600),scene.name,revision)}
 }

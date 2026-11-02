@@ -1,0 +1,29 @@
+[
+  {
+    "id": "atlantida",
+    "file": "atlantida.png",
+    "width": 1672,
+    "height": 941,
+    "bytes": 2560195,
+    "sha256": "3d243719f6709285b8639d11c648254992c27f55c3330abb452c4b22d090b2a6",
+    "origin": "Original AI-generated artwork created for the Peep Connect TV collection, November 2026"
+  },
+  {
+    "id": "obsidiana",
+    "file": "obsidiana.png",
+    "width": 1672,
+    "height": 941,
+    "bytes": 1959258,
+    "sha256": "0ccf95edf6eb169c44fa033b5acfe936b6e7c527f8fea53589cc6e4bcab2f34a",
+    "origin": "Original AI-generated artwork created for the Peep Connect TV collection, November 2026"
+  },
+  {
+    "id": "solsticio",
+    "file": "solsticio.png",
+    "width": 1672,
+    "height": 941,
+    "bytes": 2338241,
+    "sha256": "8ef15bdd13cc55b917582e1c2b2c6f3899cc450a9cf61c7af16db9c97b198935",
+    "origin": "Original AI-generated artwork created for the Peep Connect TV collection, November 2026"
+  }
+]

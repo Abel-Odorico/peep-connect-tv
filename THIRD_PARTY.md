@@ -9,3 +9,7 @@
 - Logos de aplicativos e Peep Connect: marcas de seus respectivos titulares. Publicação do código não concede direitos sobre essas marcas.
 
 O motor de teste é carregado sob demanda. O teste mede HTTP até a Cloudflare e não inclui perda de pacotes WebRTC/TURN.
+
+## Artes da Coleção 0.16
+
+Obsidiana, Solstício e Atlântida foram geradas originalmente para este projeto com ferramenta de geração de imagem. Não são fotografias documentais nem cópias de papéis Apple. Os arquivos PNG originais de produção são mantidos em dist/assets/collections. As animações são composições CSS e vetoriais próprias sobre essas artes. A inspiração de cor é a referência ADL fornecida pelo usuário; os acentos claros de Solstício e Atlântida são variantes funcionais para a interface escura.

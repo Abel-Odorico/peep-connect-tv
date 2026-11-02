@@ -1,0 +1,61 @@
+/* Original ADL-inspired environments. Raster art + three compositor layers. */
+.collection-stage{--collection-base:#06101e;--collection-gold:#c9a961;--collection-duration:28s;position:absolute;inset:0;overflow:hidden;pointer-events:none;isolation:isolate;background:var(--collection-base)}
+.collection-stage[hidden]{display:none!important}
+.peep-motion-stage[data-motion^=collection-]>.motion-sheet{display:none}
+.collection-photo,.collection-current{position:absolute;inset:-4%;background-image:var(--collection-image);background-size:cover;background-position:center;transform-origin:75% 55%;contain:paint}
+.collection-photo{animation:collection-pan var(--collection-duration) ease-in-out infinite alternate}
+.collection-current{inset:-5%;opacity:.8;mask-image:linear-gradient(transparent 53%,#000 76%);-webkit-mask-image:linear-gradient(transparent 53%,#000 76%);animation:collection-current calc(var(--collection-duration)*.7) ease-in-out infinite alternate}
+.collection-contours{position:absolute;inset:-3%;transform-origin:76% 53%;opacity:.3;animation:collection-orbit calc(var(--collection-duration)*1.2) ease-in-out infinite alternate;contain:layout paint}
+.collection-contours svg{width:100%;height:100%;fill:none;stroke:var(--collection-gold);stroke-width:1;stroke-linecap:round;stroke-linejoin:round}
+.collection-contours path+path,.collection-contours ellipse+ellipse{opacity:.35;stroke-width:.7}
+.collection-lens{position:absolute;inset:0;background:radial-gradient(ellipse at 80% 42%,transparent 15%,#03101d1c 75%)}
+.collection-shade{position:absolute;inset:0;background:linear-gradient(90deg,color-mix(in srgb,var(--collection-base) 64%,transparent),transparent 75%),linear-gradient(0deg,color-mix(in srgb,var(--collection-base) 84%,transparent),transparent 58%)}
+body[data-dynamic-tempo=vivo] .collection-stage{--collection-duration:16s}
+body[data-dynamic-tempo=suave] .collection-stage{--collection-duration:32s}
+.collection-stage[data-collection=obsidiana] .collection-contours{opacity:.28}
+.collection-stage[data-collection=solsticio] .collection-current{mask-image:linear-gradient(transparent 51%,#000 78%);-webkit-mask-image:linear-gradient(transparent 51%,#000 78%);animation-name:collection-dunes}
+.collection-stage[data-collection=solsticio] .collection-contours{opacity:.28;transform-origin:77% 45%;animation-name:collection-eclipse}
+.collection-stage[data-collection=solsticio] .collection-lens{background:radial-gradient(ellipse at 76% 42%,#c9a96110,transparent 37%)}
+.collection-stage[data-collection=atlantida] .collection-current{mask-image:linear-gradient(transparent 38%,#000 70%);-webkit-mask-image:linear-gradient(transparent 38%,#000 70%);animation-name:collection-tide;opacity:.88}
+.collection-stage[data-collection=atlantida] .collection-contours{animation-name:collection-surge;opacity:.46}
+.collection-stage[data-moving=true] :is(.collection-photo,.collection-current,.collection-contours){will-change:transform}
+.collection-stage[data-moving=false] :is(.collection-photo,.collection-current,.collection-contours){animation:none;will-change:auto}
+body[data-dynamic-tempo=parado] .collection-stage *,body.horizon-hidden .collection-stage *,body.living-idle-active .collection-home-stage *{animation-play-state:paused!important;will-change:auto!important}
+body.runtime-modal .collection-stage *,body.network-testing .collection-stage *{animation-play-state:paused!important}
+.horizon-motion-reduced .collection-stage *,body[data-performance=economy] .collection-stage *{animation:none!important;will-change:auto!important}
+#living-idle.prisma-idle[data-collection]:not([data-collection=""])>.prisma-stage{display:none}
+.collection-idle-stage .collection-shade{background:linear-gradient(90deg,color-mix(in srgb,var(--collection-base) 48%,transparent),transparent 78%),linear-gradient(0deg,color-mix(in srgb,var(--collection-base) 70%,transparent),transparent 53%)}
+body[data-collection-theme]:not([data-collection-theme=""]) .landscape:after{background:linear-gradient(90deg,color-mix(in srgb,var(--collection-base) 55%,transparent),transparent 83%),linear-gradient(0deg,color-mix(in srgb,var(--collection-base) 88%,transparent),transparent 65%)}
+body[data-collection-theme]:not([data-collection-theme=""]) :is(.app-card,.weather-card,.device-hub,.perf-gauge,.amb-weather-card,.amb-source-card){border-color:color-mix(in srgb,var(--accent) 22%,transparent)}
+body[data-collection-theme=solsticio] .app-card{background:linear-gradient(145deg,#4c272cbd,#21131ce8);box-shadow:inset 0 1px #efc58d24}
+body[data-collection-theme=atlantida] .app-card{background:linear-gradient(145deg,#134e59c9,#061d2be8);box-shadow:inset 0 1px #c9e9dc24}
+body[data-collection-theme=obsidiana] .app-card{background:linear-gradient(145deg,#192c3cdb,#091522ed)}
+body[data-collection-theme]:not([data-collection-theme=""]) .app-card:focus-visible{border-color:var(--accent);outline-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+body[data-collection-theme=solsticio] .nav.active{background:#b85c4e2b;border-color:#e7be7760}
+body[data-collection-theme=atlantida] .nav.active{background:#12728533;border-color:#d6bf8860}
+.collection-theme-choice .studio-theme-art{background-position:center;background-size:cover;box-shadow:none}
+.collection-theme-choice .studio-theme-art:after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#020b1770,transparent 80%)}
+.collection-theme-choice .studio-theme-art :is(i,b,em){display:none}
+.collection-theme-caption{font-size:7px;letter-spacing:.12em;color:var(--studio-muted);opacity:.9;margin-top:-3px}
+.collection-mode-option{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:12px 14px;border:1px solid #b1c6dc23;border-radius:12px;background:#b0d2ec07;margin:0 0 17px}
+.collection-mode-option>span{display:flex;flex-direction:column;gap:5px}
+.collection-mode-option b{font-size:10px;font-weight:500}.collection-mode-option small{font-size:8px;color:var(--studio-muted);line-height:1.5}
+.collection-mode-option select{font-size:9px;max-width:170px;padding:7px;border:1px solid #b4c5df2b;border-radius:7px}.collection-mode-option select:disabled{opacity:.45}
+.collection-picks{margin:0 0 27px;padding-bottom:24px;border-bottom:1px solid #abc5dc20}.collection-section-heading .eyebrow{font-size:7px;color:var(--accent);margin-bottom:9px}
+.collection-section-heading h3{font-size:18px!important;font-weight:400;margin:0 0 8px}.collection-section-heading>p:last-child{font-size:10px;color:var(--studio-muted);line-height:1.6;margin-bottom:16px}
+.collection-wallpaper-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.collection-wallpaper-grid article{min-width:0;border:1px solid #afc5de24;border-radius:12px;overflow:hidden;background:#ffffff05}
+.collection-wallpaper-grid img{width:100%;height:85px;object-fit:cover;display:block}
+.collection-wallpaper-grid article>div:not(.collection-wallpaper-actions){display:flex;flex-direction:column;gap:6px;padding:10px 11px}
+.collection-wallpaper-grid b{font-size:11px;font-weight:500}.collection-wallpaper-grid article>div>span{font-size:8px;line-height:1.5;color:var(--studio-muted);min-height:35px}
+.collection-wallpaper-actions{display:flex;gap:6px;padding:0 10px 11px}.collection-wallpaper-actions button{flex:1;font-size:8px;padding:7px 4px;color:inherit;background:#fff08;border:1px solid #b3c9df20;border-radius:6px}
+.collection-wallpaper-actions button[aria-pressed=true]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
+@keyframes collection-pan{from{transform:scale(1.04) translate(-1.1%,.4%)}to{transform:scale(1.1) translate(1.5%,-.6%)}}
+@keyframes collection-current{from{transform:translate(-1.5%,.6%) scale(1.04)}to{transform:translate(1.8%,-.6%) scale(1.06)}}
+@keyframes collection-orbit{from{transform:rotate(-2deg) translate(-1%,.5%)}to{transform:rotate(3deg) translate(1.5%,-1%)}}
+@keyframes collection-dunes{from{transform:translate(-2%,1%) rotate(-.8deg) scale(1.04)}to{transform:translate(2.4%,-1%) rotate(.8deg) scale(1.06)}}
+@keyframes collection-eclipse{from{transform:rotate(-7deg) scale(.97);opacity:.18}to{transform:rotate(9deg) scale(1.05);opacity:.4}}
+@keyframes collection-tide{from{transform:translate(-3%,1.3%) skewX(-1.2deg) scale(1.06)}to{transform:translate(3%,-1.3%) skewX(1.2deg) scale(1.08)}}
+@keyframes collection-surge{from{transform:translate(-2%,1%) rotate(-1deg)}to{transform:translate(2.5%,-1.2%) rotate(1deg)}}
+@media(max-width:550px){.collection-wallpaper-grid{grid-template-columns:1fr}.collection-wallpaper-grid img{height:145px}.collection-wallpaper-grid article>div>span{min-height:0}.collection-wallpaper-actions button{font-size:10px;padding:9px}.collection-mode-option{align-items:flex-start;flex-direction:column;gap:10px}.collection-mode-option select{max-width:none;width:100%}}
+@media(prefers-reduced-motion:reduce){.collection-stage *{animation:none!important;will-change:auto!important}}
