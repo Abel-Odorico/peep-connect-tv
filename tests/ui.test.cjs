@@ -235,7 +235,7 @@ test('Google account action opens setup when OAuth is missing and TV handoff whe
   assert.deepEqual(errors,[]);
  }finally{dom.window.close()}
 });
-test('Collection motion gracefully preserves original artwork when GPU is unavailable',async()=>{
+test('Collection motion uses scene-specific HTML objects without deforming the original artwork',async()=>{
  const {dom,w,d,errors}=await open();try{
   for(const id of ['obsidiana','solsticio','atlantida']){
    w.PeepCollections.selectBackdrop(id,'animated');
@@ -243,7 +243,12 @@ test('Collection motion gracefully preserves original artwork when GPU is unavai
    assert.ok(d.querySelector('.collection-home-stage .collection-photo'));
    assert.equal(d.querySelectorAll('.collection-current,.collection-contours').length,0,'No sliding duplicate of the artwork');
   }
-  assert.equal(w.PeepCollectionMotion.inspect().running,false);assert.equal(d.querySelectorAll('.collection-material').length,0);
+  assert.equal(typeof w.PeepCollectionMotion,'undefined');assert.equal(d.querySelectorAll('.collection-material,canvas').length,0);
+  assert.equal(d.querySelectorAll('.collection-home-stage .sea-wave').length,3);
+  assert.equal(d.querySelectorAll('.collection-home-stage .sea-droplet').length,4);
+  w.PeepCollections.selectBackdrop('obsidiana','animated');assert.equal(d.querySelectorAll('.collection-home-stage .lake-ripple').length,3);assert.ok(d.querySelector('.collection-home-stage .gold-trace'));
+  w.PeepCollections.selectBackdrop('solsticio','animated');assert.ok(d.querySelector('.collection-home-stage .solar-corona'));assert.equal(d.querySelectorAll('.collection-home-stage .solar-dust').length,4);
+  w.PeepCollections.selectBackdrop('solsticio','static');assert.ok(d.querySelector('.collection-home-stage').hidden);assert.equal(d.querySelectorAll('.collection-home-stage .scene-object').length,0);
   assert.deepEqual(errors,[]);
  }finally{dom.window.close()}
 });

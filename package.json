@@ -1,6 +1,6 @@
 {
   "name": "peep-connect-tv",
-  "version": "0.16.3",
+  "version": "0.16.4",
   "private": true,
   "description": "Peep Connect Android TV experience",
   "scripts": {

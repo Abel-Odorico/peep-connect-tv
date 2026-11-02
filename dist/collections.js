@@ -1,4 +1,4 @@
-/* Three original environments: a theme, a still and a layered motion companion. */
+/* Original still artwork with independent HTML/CSS scene animation. */
 (()=>{
  'use strict';
  const packs=[
@@ -14,13 +14,20 @@
  const isMotionId=id=>String(id||'').startsWith('collection-')&&!!getMotion(id);
  const home=document.createElement('div');home.className='collection-stage collection-home-stage';home.hidden=true;home.setAttribute('aria-hidden','true');horizonStage.append(home);
  const rest=document.createElement('div');rest.className='collection-stage collection-idle-stage';rest.hidden=true;rest.setAttribute('aria-hidden','true');idle.prepend(rest);
+ // Each moving object has its own HTML layer. The photograph never moves.
+ function sceneLayers(id){
+  const repeats=(name,count)=>Array.from({length:count},(_,i)=>'<i class="'+name+' scene-object" style="--i:'+i+'"></i>').join('');
+  if(id==='atlantida')return '<div class="scene-curl"><i class="sea-current scene-object"></i></div><div class="scene-curl scene-curl-small"><i class="sea-current scene-object"></i></div><div class="scene-sea">'+repeats('sea-wave',3)+'</div><div class="scene-beams">'+repeats('sea-beam',2)+'</div><div class="scene-spray">'+repeats('sea-droplet',4)+'</div>';
+  if(id==='solsticio')return '<div class="scene-solar"><i class="solar-corona scene-object"></i><i class="solar-glow scene-object"></i></div><div class="scene-solar-lake">'+repeats('lake-ripple',3)+'</div><div class="scene-dust">'+repeats('solar-dust',4)+'</div>';
+  return '<div class="scene-mirror">'+repeats('lake-ripple',3)+'<i class="mirror-light scene-object"></i></div><div class="scene-gold"><i class="gold-trace scene-object"></i></div>';
+ }
  function configure(surface,pack){
   if(surface.dataset.collection===pack?.id)return;
   surface.replaceChildren();surface.dataset.collection=pack?.id||'';
   if(!pack)return;
   surface.style.setProperty('--collection-image','url("'+pack.wallpaper+'")');
   surface.style.setProperty('--collection-base',pack.colors[0]);surface.style.setProperty('--collection-gold',pack.accent);
-  surface.innerHTML='<div class="collection-photo"></div><div class="collection-lens"></div><div class="collection-shade"></div>';
+  surface.innerHTML='<div class="collection-photo"></div><div class="collection-effects" data-animation="'+pack.id+'">'+sceneLayers(pack.id)+'</div><div class="collection-lens"></div><div class="collection-shade"></div>';
  }
  function applyHome(){
   const pack=isMotionId(prefs.motionWallpaper)?getMotion(prefs.motionWallpaper):null;
@@ -28,7 +35,6 @@
   home.dataset.moving=String(horizonMotionAllowed()&&prefs.dynamicTempo!=='parado');
   document.body.dataset.collectionTheme=get(prefs.theme)?.id||'';
   if(get(prefs.theme))document.body.style.setProperty('--collection-base',get(prefs.theme).colors[0]);
-  window.PeepCollectionMotion?.sync();
  }
  function paintIdle(){
   const pack=get(prefs.idleCollection),show=!!pack&&prefs.idleStyle!=='quiet';
@@ -38,7 +44,6 @@
    for(const [key,value]of Object.entries({'--p-a':pack.colors[1],'--p-b':pack.accent,'--p-c':pack.colors[3],'--p-base':pack.colors[0]}))idle.style.setProperty(key,value);
    richSetText('prisma-palette-name',pack.name);
   }
-  window.PeepCollectionMotion?.sync();
   const tag=idle.querySelector('.prisma-header-tag');if(tag)for(const node of tag.childNodes)if(node.nodeType===Node.TEXT_NODE&&node.textContent.trim())node.textContent=show?pack.name.toUpperCase()+' ':'PRISMA ';
  }
  function nextIdle(delta){const index=Math.max(0,packs.findIndex(p=>p.id===prefs.idleCollection));prefs.idleCollection=packs[(index+delta+packs.length)%packs.length].id;paintIdle()}

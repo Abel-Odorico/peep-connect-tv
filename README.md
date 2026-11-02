@@ -2,7 +2,7 @@
 
 Experiência de TV em HTML, CSS e JavaScript, com um aplicativo Android WebView e um serviço Python local. Interface para controle remoto, favoritos, temas, fundos animados, descanso, clima, TMDB, YouTube e diagnóstico do dispositivo.
 
-**Interface e APK atuais: 0.16.3 — Movimento dos cenários e painel Google.** Projeto em desenvolvimento. O APK abre a experiência; ainda não substitui automaticamente o launcher HOME do Android TV. A versão conectada depende do serviço local no computador e da conexão ADB.
+**Interface e APK atuais: 0.16.4 — Cenários em HTML/CSS.** Projeto em desenvolvimento. O APK abre a experiência; ainda não substitui automaticamente o launcher HOME do Android TV. A versão conectada depende do serviço local no computador e da conexão ADB.
 
 ## Executar
 
@@ -23,7 +23,7 @@ python3 android/instalar_tv.py --device IP_DA_TV:PORTA_DE_CONEXAO
 
 O código de pareamento é informado no prompt do ADB. O instalador valida modelo/plataforma, conserva a assinatura local e não altera HOME, firmware ou pacotes do sistema. Consulte [android/README.md](android/README.md).
 
-A versão 0.16.3 adiciona animação localizada de água, reflexos e superfície solar às três coleções, com câmera fixa. Corrige também o botão da conta Google na TV. [Detalhes e limites](docs/MOTION-0.16.3.md).
+A versão 0.16.4 substitui o efeito de deformação por elementos HTML/CSS animados: ondas, reflexos, coroa solar e partículas sobre a arte imóvel. Mantém a correção do painel Google da 0.16.3. [Detalhes e limites](docs/HTML-MOTION-0.16.4.md).
 
 A versão 0.16.2 redesenha o Ambiente com clima ilustrado, mostrador de umidade, vento em movimento, faixas de previsão e cards coloridos com gráficos reais de mercado. [Detalhes e validação](docs/AMBIENT-0.16.2.md).
 

@@ -1,5 +1,7 @@
 # 0.16.3 — Material em movimento e conta Google
 
+Registro histórico: o usuário identificou tremor na deformação da fotografia. O renderizador WebGL foi removido e substituído por animações HTML/CSS na [0.16.4](HTML-MOTION-0.16.4.md).
+
 ## Cenários
 
 A câmera não se desloca. Removidos pan, cópia mascarada da fotografia e contornos soltos. Os três PNGs originais não foram alterados.

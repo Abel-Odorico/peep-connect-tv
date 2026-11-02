@@ -1,9 +1,8 @@
-/* Original ADL-inspired environments. Raster art + three compositor layers. */
+/* Fixed original artwork, independent semantic HTML layers, compositor motion only. */
 .collection-stage{--collection-base:#06101e;--collection-gold:#c9a961;--collection-duration:28s;position:absolute;inset:0;overflow:hidden;pointer-events:none;isolation:isolate;background:var(--collection-base)}
 .collection-stage[hidden]{display:none!important}
 .peep-motion-stage[data-motion^=collection-]>.motion-sheet{display:none}
-.collection-photo,.collection-material{position:absolute;inset:0;width:100%;height:100%;background-image:var(--collection-image);background-size:cover;background-position:center;contain:paint}
-.collection-material[hidden]{display:none}
+.collection-photo{position:absolute;inset:0;width:100%;height:100%;background-image:var(--collection-image);background-size:cover;background-position:center;contain:paint}
 .collection-lens{position:absolute;inset:0;background:radial-gradient(ellipse at 80% 42%,transparent 15%,#03101d1c 75%)}
 .collection-shade{position:absolute;inset:0;background:linear-gradient(90deg,color-mix(in srgb,var(--collection-base) 64%,transparent),transparent 75%),linear-gradient(0deg,color-mix(in srgb,var(--collection-base) 84%,transparent),transparent 58%)}
 #living-idle.prisma-idle[data-collection]:not([data-collection=""])>.prisma-stage{display:none}
@@ -35,3 +34,48 @@ body[data-collection-theme=atlantida] .nav.active{background:#12728533;border-co
 .collection-wallpaper-actions button[aria-pressed=true]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
 @media(max-width:550px){.collection-wallpaper-grid{grid-template-columns:1fr}.collection-wallpaper-grid img{height:145px}.collection-wallpaper-grid article>div>span{min-height:0}.collection-wallpaper-actions button{font-size:10px;padding:9px}.collection-mode-option{align-items:flex-start;flex-direction:column;gap:10px}.collection-mode-option select{max-width:none;width:100%}}
 @media(prefers-reduced-motion:reduce){.collection-stage *{animation:none!important;will-change:auto!important}}
+
+/* The 16:9 effects plane follows background-size:cover, including narrow screens. */
+.collection-effects{--pace:1;position:absolute;left:50%;top:50%;width:max(100vw,177.6833vh);height:max(100vh,56.28vw);transform:translate(-50%,-50%);pointer-events:none;overflow:hidden;contain:layout paint}
+body[data-dynamic-tempo=suave] .collection-effects{--pace:1.6}
+.collection-effects .scene-object{display:block;position:absolute;animation-play-state:running;will-change:transform,opacity;backface-visibility:hidden}
+.collection-effects>div{position:absolute;overflow:hidden}
+/* Atlântida: advancing foreground crests, suspended spray and underwater light. */
+.scene-sea{left:0;right:0;top:64%;bottom:-8%;}
+.sea-wave{left:-20%;top:-12%;width:135%;height:95%;border-radius:48% 62% 0 0;background:linear-gradient(180deg,#cceee02b,#38aab22b 8%,#083b4914 22%,transparent 50%);border-top:2px solid #f5e0b9a6;box-shadow:inset 0 7px 12px #a7f4e42b;transform-origin:50% 0;opacity:0;animation:sea-advance calc(12s * var(--pace)) cubic-bezier(.23,.5,.65,1) infinite;animation-delay:calc(var(--i) * -4s * var(--pace))}
+.scene-beams{left:56%;top:8%;width:40%;height:62%;}
+.sea-beam{top:-30%;left:calc(25% + var(--i) * 27%);height:135%;width:23%;background:linear-gradient(90deg,transparent,#d4ffe629,transparent);transform-origin:50% 0;animation:sea-light calc(17s * var(--pace)) ease-in-out infinite alternate;animation-delay:calc(var(--i) * -7s)}
+.scene-spray{left:54%;top:26%;width:39%;height:52%}
+.sea-droplet{left:calc(9% + var(--i) * 23%);bottom:calc(4% + var(--i) * 12%);width:3px;height:3px;border-radius:50%;background:#e7fff4;box-shadow:11px 14px 0 -1px #d9e5b9,24px -9px 0 -1px #d6f7ec;opacity:0;animation:sea-spray calc(9s * var(--pace)) linear infinite;animation-delay:calc(var(--i) * -2.25s * var(--pace))}
+.scene-curl{left:62%;top:8%;width:36%;height:65%;border-radius:50%;transform:rotate(-18deg);mask-image:radial-gradient(ellipse,transparent 51%,#000 60%,#000 64%,transparent 72%);-webkit-mask-image:radial-gradient(ellipse,transparent 51%,#000 60%,#000 64%,transparent 72%)}
+.scene-curl-small{left:49%;top:41%;width:20%;height:33%;opacity:.7;transform:rotate(-22deg)}
+.sea-current{inset:-20%;background:conic-gradient(from 20deg,transparent 0deg,#93e2dd00 35deg,#b5f5ea55 70deg,#fff1cbb3 96deg,transparent 113deg,transparent 200deg,#c9eadb66 250deg,transparent 280deg);animation:sea-circulate calc(18s * var(--pace)) linear infinite}
+.scene-curl-small .sea-current{animation-duration:calc(14s * var(--pace));animation-delay:-8s}
+@keyframes sea-circulate{to{transform:rotate(-360deg)}}
+/* Obsidiana: ripples travel outward across the lake; the architecture is untouched. */
+.scene-mirror{left:0;right:0;top:76%;bottom:0;}
+.lake-ripple{left:38%;top:8%;width:54%;height:20%;border:1px solid #d9c18d8c;border-radius:50%;box-shadow:0 2px 6px #d9bd7624,inset 0 2px 5px #ecda9e1a;opacity:0;animation:lake-expand calc(10s * var(--pace)) linear infinite;animation-delay:calc(var(--i) * -3.333s * var(--pace))}
+.mirror-light{left:51%;top:-30%;width:20%;height:150%;background:repeating-linear-gradient(0deg,transparent 0 7%,#e5bf7b33 8%,transparent 9% 14%);mask-image:linear-gradient(90deg,transparent,#000,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000,transparent);animation:mirror-drift calc(14s * var(--pace)) ease-in-out infinite alternate}
+.scene-gold{left:42%;top:0;width:58%;height:74%;}
+.gold-trace{left:0;top:62%;width:125%;height:30%;background:linear-gradient(0deg,transparent,#f6cf8724,transparent);transform:rotate(-30deg);animation:gold-pass calc(18s * var(--pace)) ease-in-out infinite;opacity:0}
+/* Solstício: a circular light field inside the sun, drifting embers and lake rings. */
+.scene-solar{left:59.2%;top:16.2%;width:27.6%;height:49.1%;border-radius:50%;mask-image:radial-gradient(circle,#000 44%,#0009 60%,transparent 72%);-webkit-mask-image:radial-gradient(circle,#000 44%,#0009 60%,transparent 72%)}
+.solar-corona{inset:-20%;border-radius:50%;background:repeating-conic-gradient(from 15deg,#ffe8a700 0deg,#ffe6a04a 9deg,#f49b3b00 22deg,#fff0b729 30deg,#ffe8a700 45deg);animation:solar-turn calc(65s * var(--pace)) linear infinite}
+.solar-glow{inset:10%;border-radius:50%;background:radial-gradient(ellipse at 35% 35%,#fff1b273,transparent 64%);animation:solar-breathe calc(13s * var(--pace)) ease-in-out infinite alternate}
+.scene-solar-lake{left:43%;top:76%;width:51%;height:16%;clip-path:polygon(40% 0,55% 0,100% 80%,92% 100%,50% 100%,0 18%)}
+.scene-solar-lake .lake-ripple{left:25%;top:4%;width:50%;height:19%;border-color:#ffdf9f96;animation-duration:calc(12s * var(--pace));animation-delay:calc(var(--i) * -4s * var(--pace))}
+.scene-dust{left:46%;top:28%;width:44%;height:53%}
+.solar-dust{left:calc(6% + var(--i) * 25%);bottom:0;width:3px;height:3px;background:#ffe3a5;border-radius:50%;box-shadow:14px -20px 0 -1px #ffd08a;opacity:0;animation:solar-rise calc(16s * var(--pace)) linear infinite;animation-delay:calc(var(--i) * -4s * var(--pace))}
+@keyframes sea-advance{0%{transform:translate3d(4%,-12%,0) scale(.85,.65) rotate(-5deg);opacity:0}18%{opacity:.62}70%{opacity:.42}100%{transform:translate3d(-5%,65%,0) scale(1.2,1.25) rotate(-2deg);opacity:0}}
+@keyframes sea-light{from{transform:rotate(-15deg);opacity:.3}to{transform:rotate(9deg);opacity:.8}}
+@keyframes sea-spray{0%{transform:translate3d(0,20px,0);opacity:0}18%{opacity:.65}75%{opacity:.45}100%{transform:translate3d(-35px,-65px,0);opacity:0}}
+@keyframes lake-expand{0%{transform:translate3d(0,0,0) scale(.3,.3);opacity:0}15%{opacity:.64}65%{opacity:.38}100%{transform:translate3d(-9%,65%,0) scale(2.7,3.2);opacity:0}}
+@keyframes mirror-drift{from{transform:translate3d(-8%,0,0) skewX(-7deg);opacity:.24}to{transform:translate3d(8%,7%,0) skewX(7deg);opacity:.6}}
+@keyframes gold-pass{0%,100%{transform:translate3d(0,25%,0) rotate(-30deg);opacity:0}45%{opacity:.7}85%{transform:translate3d(0,-165%,0) rotate(-30deg);opacity:0}}
+@keyframes solar-turn{to{transform:rotate(360deg)}}
+@keyframes solar-breathe{from{transform:translate3d(-5%,3%,0) scale(.92);opacity:.3}to{transform:translate3d(4%,-3%,0) scale(1.12);opacity:.65}}
+@keyframes solar-rise{0%{transform:translate3d(0,0,0);opacity:0}20%{opacity:.7}75%{opacity:.5}100%{transform:translate3d(-40px,-130px,0);opacity:0}}
+/* Pauses retain their current frame. Disabled motion shows the original photograph. */
+.collection-stage[data-moving=false] .collection-effects,body.horizon-motion-reduced .collection-effects,body[data-performance=economy] .collection-effects,body[data-motion=off] .collection-effects,body[data-dynamic-tempo=parado] .collection-effects{display:none}
+body:is(.runtime-modal,.network-testing,.runtime-hidden,.horizon-hidden) .collection-effects .scene-object,body.living-idle-active .collection-home-stage .scene-object,body:not(.living-idle-active) .collection-idle-stage .scene-object{animation-play-state:paused!important;will-change:auto}
+@media(prefers-reduced-motion:reduce){.collection-effects{display:none}}
