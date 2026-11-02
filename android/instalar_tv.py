@@ -25,6 +25,26 @@ KNOWN_IP = KNOWN_DEVICE.rsplit(':', 1)[0] if ':' in KNOWN_DEVICE else ''
 KNOWN_IDENTITY = _device_config.get('identityPrefix') or ''
 
 
+class LocalADBPermissionError(RuntimeError):
+    pass
+
+
+def connect_address(adb, address, timeout=10):
+    try:
+        response = command([adb, 'connect', address], timeout=timeout)
+    except RuntimeError as error:
+        response = str(error)
+        if not any(message in response.lower() for message in ('operation not permitted', 'permission denied')):
+            raise
+    if any(message in response.lower() for message in ('operation not permitted', 'permission denied')):
+        raise LocalADBPermissionError(
+            'A conexão ADB foi bloqueada no Mac: Operation not permitted / Permission denied. '
+            'Isso não confirma perda do pareamento. Confira Ajustes do Sistema → Privacidade e Segurança → Rede Local para o Terminal/app usado. '
+            'Reinicie o ADB pelo Terminal (adb kill-server e adb start-server) e tente novamente. '
+            'Não apague o pareamento por causa deste erro.')
+    return response
+
+
 def mdns_candidates(output):
     addresses = []
     for line in output.splitlines():
@@ -42,9 +62,11 @@ def connect_tv(adb, requested=None):
     if not target:
         raise RuntimeError('Informe --device IP:PORTA, ou configure PEEP_TV_DEVICE. Use a porta de conexão, não a de pareamento.')
     try:
-        command([adb, 'connect', target], timeout=10)
+        connect_address(adb, target)
         if command([adb, '-s', target, 'get-state'], timeout=5) == 'device':
             return target
+    except LocalADBPermissionError:
+        raise
     except (RuntimeError, subprocess.TimeoutExpired):
         pass
     if not requested:
@@ -62,10 +84,12 @@ def connect_tv(adb, requested=None):
             addresses = []
         for address in addresses[:3]:
             try:
-                command([adb, 'connect', address], timeout=8)
+                connect_address(adb, address, timeout=8)
                 if command([adb, '-s', address, 'get-state'], timeout=5) == 'device':
                     print('Conexão encontrada: ' + address, flush=True)
                     return address
+            except LocalADBPermissionError:
+                raise
             except (RuntimeError, subprocess.TimeoutExpired):
                 pass
     raise RuntimeError('Não encontrei a conexão autorizada da TV. Na Konka, abra Configurações → Opções do desenvolvedor → Depuração por Wi-Fi. Ative-a e consulte Endereço IP e porta na tela principal (não a porta do código de pareamento). Execute este comando novamente com --device IP:PORTA. Se o Mac não aparecer em Dispositivos pareados, será necessário parear novamente.')

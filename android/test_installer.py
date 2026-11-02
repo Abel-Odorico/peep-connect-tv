@@ -70,6 +70,14 @@ class InstallerSafetyTests(unittest.TestCase):
                 installer.connect_tv('adb', '192.0.2.10:40003')
             self.assertFalse(any('mdns' in call.args[0] for call in command.call_args_list))
 
+    def test_local_permission_failure_is_not_misreported_as_pairing_failure(self):
+        for response in ['failed to connect: Operation not permitted', RuntimeError('Permission denied')]:
+            kwargs = {'side_effect': response} if isinstance(response, Exception) else {'return_value': response}
+            with self.subTest(response=type(response).__name__), patch.object(installer, 'command', **kwargs) as command:
+                with self.assertRaisesRegex(installer.LocalADBPermissionError, 'bloqueada no Mac'):
+                    installer.connect_tv('adb')
+                self.assertEqual(command.call_count, 1)
+
 
 if __name__ == '__main__':
     unittest.main()
