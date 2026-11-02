@@ -5,6 +5,7 @@ import json
 import os
 import re
 import signal
+import shutil
 import subprocess
 import sys
 import time
@@ -148,6 +149,15 @@ def ensure_service(device):
     raise RuntimeError('O serviço local não ficou disponível. Confira os arquivos e a porta 8770.')
 
 
+def adb_executable():
+    explicit = os.environ.get('ADB')
+    sdk = Path(os.environ.get('ANDROID_SDK_ROOT') or Path.home() / 'Library/Android/sdk')
+    candidate = Path(explicit or shutil.which('adb') or sdk / 'platform-tools/adb')
+    if not candidate.is_file():
+        raise RuntimeError('Android SDK Platform Tools não encontrado. Configure ADB ou ANDROID_SDK_ROOT.')
+    return candidate
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--device', help='Endereço atual da depuração Wi-Fi; sem esta opção, tenta descoberta automática.')
@@ -155,9 +165,7 @@ def main():
     args = parser.parse_args()
     if args.device and not re.fullmatch(r'[A-Za-z0-9._:-]+', args.device):
         raise RuntimeError('Endereço ADB inválido.')
-    adb = Path.home() / 'Library/Android/sdk/platform-tools/adb'
-    if not adb.is_file():
-        raise RuntimeError('Android SDK Platform Tools não encontrado no Mac.')
+    adb = adb_executable()
     print('Conferindo os arquivos locais…', flush=True)
     check_files(args.apk)
     print('Conectando à Konka por ADB…', flush=True)

@@ -26,7 +26,7 @@ class InstallerSafetyTests(unittest.TestCase):
             if args[-1] == 'ro.board.platform':
                 return 'other'
             return ''
-        with patch.object(sys, 'argv', ['instalar_tv.py']), patch.object(installer, 'check_files'), patch.object(installer, 'command', side_effect=run), patch.object(installer, 'ensure_service') as service:
+        with patch.object(installer, 'adb_executable', return_value=Path('/example/adb')), patch.object(sys, 'argv', ['instalar_tv.py']), patch.object(installer, 'check_files'), patch.object(installer, 'command', side_effect=run), patch.object(installer, 'ensure_service') as service:
             with self.assertRaisesRegex(RuntimeError, 'não corresponde'):
                 installer.main()
             service.assert_not_called()
