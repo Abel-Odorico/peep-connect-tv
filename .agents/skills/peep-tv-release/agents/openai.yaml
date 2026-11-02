@@ -1,0 +1,4 @@
+interface:
+  display_name: "Peep TV — Publicação segura"
+  short_description: "Compilar, atualizar a TV e publicar sem segredos"
+  default_prompt: "Use $peep-tv-release para preparar uma versão e publicar somente os arquivos revisados."

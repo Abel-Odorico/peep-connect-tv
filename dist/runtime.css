@@ -1,0 +1,32 @@
+/* Keep animation on the compositor; do not blur each card over moving pixels. */
+html.tv-mode body :is(nav,.connection,.utility,.app-card,.weather-card,.device-hub,.living-market,.market-card,.prisma-weather-dock,.horizon-idle){backdrop-filter:none;-webkit-backdrop-filter:none}
+html.tv-mode .perf-progress{filter:none}
+html.tv-mode .landscape .grain{display:none}
+html.tv-mode body .app-card{transition:transform .16s,border-color .16s,background-color .16s}
+html.tv-mode body .app-content-card{transition:transform .16s}
+html.tv-mode body .prisma-art{contain:layout paint}
+.living-idle-active .shell{visibility:hidden}
+.living-idle-active .peep-motion-stage{visibility:hidden}
+body.runtime-hidden *{animation-play-state:paused!important}
+/* Isolate three cached HTML layers instead of repainting SVG groups each frame. */
+.prisma-layer{position:absolute;inset:0;transform-origin:70% 50%;animation:prisma-far 28s ease-in-out infinite alternate;contain:layout paint}
+.prisma-layer .prisma-art{position:absolute;inset:-5%;height:110%;width:110%;opacity:.95}
+.prisma-layer .prisma-ribbon{animation:none!important;transform:none!important}
+.prisma-layer.layer-middle{animation-name:studio-ribbon-travel;animation-duration:24s}
+.prisma-layer.layer-front{animation-name:prisma-near;animation-duration:32s}
+body[data-dynamic-tempo=vivo] .prisma-layer{animation-duration:12s}
+body[data-dynamic-tempo=vivo] .prisma-layer.layer-middle{animation-duration:10s}
+body[data-dynamic-tempo=vivo] .prisma-layer.layer-front{animation-duration:14s}
+body[data-dynamic-tempo=suave] .prisma-layer{animation-duration:28s}
+.prisma-home-stage .prisma-layer,.prisma-idle:not([hidden]) .prisma-layer{will-change:transform}
+body[data-dynamic-tempo=parado] .prisma-layer,body.horizon-hidden .prisma-layer,.living-idle-active .prisma-home-stage .prisma-layer{animation-play-state:paused!important;will-change:auto}
+body.horizon-motion-reduced .prisma-home-stage .prisma-layer,body[data-performance=economy] .prisma-layer{animation:none!important;will-change:auto}
+@media(prefers-reduced-motion:reduce){.prisma-layer{animation:none!important;will-change:auto}}
+html.tv-mode .peep-motion-stage .motion-sheet{will-change:transform;contain:paint}
+html.tv-mode body .prisma-orb{box-shadow:none}
+/* The full text shell stays still, avoiding a second full-screen animated layer. */
+html.tv-mode #living-idle.prisma-idle .prisma-shell{animation:none}
+html.tv-mode dialog,html.tv-mode dialog::backdrop{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+body.runtime-modal .peep-motion-stage *,body.runtime-modal .landscape{animation-play-state:paused!important}
+.theme-studio-dialog .studio-tabs button{transition:none;scroll-margin:0}
+.theme-studio-dialog .studio-tab-body{scroll-behavior:auto;contain:layout paint}

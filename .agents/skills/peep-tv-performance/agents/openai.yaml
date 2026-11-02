@@ -1,0 +1,4 @@
+interface:
+  display_name: "Peep TV — Fluidez e rede"
+  short_description: "Medir fluidez, memória e qualidade da conexão"
+  default_prompt: "Use $peep-tv-performance para diagnosticar travamentos e validar métricas na TV."

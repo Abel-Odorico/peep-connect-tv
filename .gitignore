@@ -1,0 +1,27 @@
+# Local credentials, TV identity and signing material
+.private/
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.jks
+*.keystore
+*credentials*.json
+*token*.json
+# Local state, measurements, screenshots and historical copies
+backups/
+atualizacoes/
+outputs/
+.openai/
+Peep-Connect-TV-Logo-4K-8K/
+__pycache__/
+*.pyc
+.DS_Store
+# Generated builds and dependencies
+android/build/
+node_modules/
+*.apk
+*.idsig
+*.log

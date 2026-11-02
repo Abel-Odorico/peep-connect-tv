@@ -1,0 +1,4 @@
+interface:
+  display_name: "Peep TV — Desenvolvimento"
+  short_description: "Evoluir a experiência da TV com consistência"
+  default_prompt: "Use $peep-tv-develop para implementar e testar uma melhoria no Peep Connect TV."
