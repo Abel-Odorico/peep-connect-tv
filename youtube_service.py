@@ -28,6 +28,8 @@ class YouTube:
         self.pending = {}
         self.feed_cache = None
         self.public_cache = None
+        self.channel_cache = {}
+        self.channel_lock = threading.Lock()
 
     def api_key(self):
         value = os.environ.get('YOUTUBE_API_KEY', '')
@@ -189,7 +191,7 @@ class YouTube:
         except YouTubeError:
             device_configured = False
         connected = (device_configured if token.get('_client_kind') == 'device' else configured) and bool(token.get('refresh_token') or token.get('access_token'))
-        return {'configured': configured, 'deviceConfigured': device_configured, 'deviceFlowVersion': 1, 'apiConfigured': bool(self.api_key()), 'connected': connected, 'account': self.feed_cache.get('account') if self.feed_cache and connected else None}
+        return {'configured': configured, 'deviceConfigured': device_configured, 'deviceFlowVersion': 1, 'channelStatsVersion': 1, 'apiConfigured': bool(self.api_key()), 'connected': connected, 'account': self.feed_cache.get('account') if self.feed_cache and connected else None}
 
     def public_feed(self):
         with self.lock:
@@ -207,6 +209,89 @@ class YouTube:
                     videos.append({'id': video_id, 'title': snippet.get('title', 'Vídeo'), 'channel': snippet.get('channelTitle', ''), 'published': snippet.get('publishedAt', ''), 'thumbnail': f'https://i.ytimg.com/vi/{video_id}/mqdefault.jpg'})
             self.public_cache = {'account': None, 'results': videos, 'at': time.time(), 'personalized': False, 'mode': 'popular'}
             return self.public_cache
+
+    @staticmethod
+    def channel_selector(value):
+        value = value.strip()
+        if not value or len(value) > 250:
+            raise YouTubeError('Informe o @identificador ou link do canal.', 400)
+        if value.startswith(('https://', 'http://', 'www.youtube.com/', 'youtube.com/')):
+            try:
+                parsed = urllib.parse.urlsplit(value if '://' in value else 'https://' + value)
+                port = parsed.port
+            except ValueError:
+                raise YouTubeError('Link de canal inválido.', 400) from None
+            if parsed.hostname not in ('youtube.com', 'www.youtube.com', 'm.youtube.com') or parsed.username or parsed.password or port not in (None, 443, 80):
+                raise YouTubeError('Use um link de canal do youtube.com.', 400)
+            parts = urllib.parse.unquote(parsed.path).strip('/').split('/')
+            if parts[0].startswith('@'):
+                value = parts[0]
+            elif len(parts) == 2 and parts[0] in ('channel', 'user'):
+                value = parts[1]
+                if parts[0] == 'user' and re.fullmatch(r'[\w.-]{1,100}', value):
+                    return {'forUsername': value}
+            else:
+                raise YouTubeError('Use o link com @identificador ou /channel/UC…; links de vídeos não identificam um canal.', 400)
+        if re.fullmatch(r'UC[A-Za-z0-9_-]{22}', value):
+            return {'id': value}
+        if re.fullmatch(r'@[\w.·-]{1,100}', value):
+            return {'forHandle': value}
+        raise YouTubeError('Use @identificador, o ID UC… ou o link do canal; o nome exibido pode ser ambíguo.', 400)
+
+    def channel_stats(self, value):
+        selector = self.channel_selector(value)
+        cache_key = tuple(selector.items())
+        with self.channel_lock:
+            previous = self.channel_cache.get(cache_key)
+            if previous and time.time() - previous['at'] < 900:
+                return {**previous, 'cached': True}
+            key = self.api_key()
+            if not key:
+                raise YouTubeError('Configure a chave do YouTube no serviço local. Esta consulta pública não exige login Google.', 503)
+
+            def public(resource, **params):
+                return self.request('https://www.googleapis.com/youtube/v3/' + resource + '?' + urllib.parse.urlencode({**params, 'key': key}))
+
+            def count(stats, name):
+                value = stats.get(name)
+                return int(value) if str(value).isdigit() else None
+
+            items = public('channels', part='snippet,statistics,contentDetails', **selector).get('items', [])
+            if not items:
+                raise YouTubeError('Canal não encontrado. Confira o @identificador.', 404)
+            channel = items[0]
+            cid = channel.get('id', '')
+            if not re.fullmatch(r'UC[A-Za-z0-9_-]{22}', cid):
+                raise YouTubeError('O YouTube retornou um canal inválido.')
+            snippet, stats = channel.get('snippet', {}), channel.get('statistics', {})
+            videos, partial = [], False
+            playlist = channel.get('contentDetails', {}).get('relatedPlaylists', {}).get('uploads')
+            if playlist:
+                try:
+                    uploads = public('playlistItems', part='contentDetails', playlistId=playlist, maxResults=8)
+                    ids = [item.get('contentDetails', {}).get('videoId', '') for item in uploads.get('items', [])]
+                    ids = [vid for vid in ids if re.fullmatch(r'[A-Za-z0-9_-]{11}', vid)]
+                    result = public('videos', part='snippet,statistics', id=','.join(ids)) if ids else {}
+                    by_id = {item['id']: item for item in result.get('items', []) if item.get('id') in ids}
+                    for vid in ids:
+                        if vid not in by_id:
+                            continue
+                        item = by_id[vid]
+                        vs, sn = item.get('statistics', {}), item.get('snippet', {})
+                        videos.append({'id': vid, 'title': sn.get('title', 'Vídeo'), 'published': sn.get('publishedAt'),
+                            'views': count(vs, 'viewCount'), 'likes': count(vs, 'likeCount'), 'comments': count(vs, 'commentCount')})
+                except YouTubeError:
+                    partial = True
+            data = {'id': cid, 'title': snippet.get('title', 'Canal'), 'handle': snippet.get('customUrl', ''),
+                'subscribers': None if stats.get('hiddenSubscriberCount') else count(stats, 'subscriberCount'),
+                'subscribersHidden': bool(stats.get('hiddenSubscriberCount')), 'views': count(stats, 'viewCount'),
+                'videoCount': count(stats, 'videoCount'), 'videos': videos, 'partial': partial,
+                'at': time.time(), 'cached': False, 'cacheSeconds': 900, 'source': 'YouTube Data API v3',
+                'analyticsAvailable': False}
+            if len(self.channel_cache) >= 16:
+                self.channel_cache.pop(next(iter(self.channel_cache)))
+            self.channel_cache[cache_key] = data
+            return data
 
     def save_tokens(self, data):
         self.private.mkdir(mode=0o700, exist_ok=True)

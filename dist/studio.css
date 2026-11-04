@@ -43,3 +43,8 @@ html.tv-mode dialog.theme-studio-dialog{box-shadow:none}
 .theme-studio-dialog .studio-tab-body{position:relative;overflow:hidden;padding:0;scrollbar-gutter:auto;contain:strict}
 .theme-studio-dialog .studio-tab-body>[role=tabpanel]{position:absolute;inset:0;display:block;overflow:auto;padding:4px 8px 12px 4px;contain:layout paint;overscroll-behavior:contain;overflow-anchor:none;scroll-behavior:auto;scrollbar-width:thin;scrollbar-gutter:stable}
 .theme-studio-dialog .studio-tab-body>[role=tabpanel][hidden]{display:block!important;visibility:hidden;pointer-events:none}
+
+body.studio015[data-theme=adl-day]{--studio-panel:#faf8f5;--studio-muted:#465b6c}
+body[data-theme=adl-day] dialog.theme-studio-dialog{background:#faf8f5;color:#0b1f3b;border-color:#0b1f3b40}
+body[data-theme=adl-day] .studio-theme{background:#f0ede7;border-color:#0b1f3b30}
+body[data-theme=adl-day] .studio-tabs{border-color:#0b1f3b30}

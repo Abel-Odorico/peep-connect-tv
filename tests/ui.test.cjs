@@ -262,3 +262,38 @@ test('Device QR uses Google response, displays original code and cancels on clos
   assert.deepEqual(errors,[]);
  }finally{dom.window.close()}
 });
+
+test('channel statistics are manual, public and preserve previous results on errors',async()=>{
+ const {dom,w,d,errors}=await open();try{
+  let calls=0;
+  w.fetch=async input=>{if(!String(input).includes('/api/youtube/channel'))return new Response('{}');calls++;
+   if(calls===2)return new Response(JSON.stringify({error:'Cota atingida'}),{status:429});
+   return new Response(JSON.stringify({id:'UC'+'a'.repeat(22),title:'<img src=x onerror=alert(1)>',handle:'@test',subscribers:null,subscribersHidden:true,views:100,videoCount:1,at:Date.now()/1000,source:'YouTube Data API v3',videos:[{id:'abcdefghijk',title:'Test video',views:0,likes:null,comments:2}]}));
+  };
+  assert.equal(calls,0);
+  d.querySelector('#channel-input').value='@test';
+  const submit=()=>d.querySelector('#channel-stats-form').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
+  submit();submit();await delay(30);
+  assert.equal(calls,1);assert.equal(d.querySelectorAll('.channel-kpis article').length,3);
+  assert.match(d.querySelector('#channel-stats-result').textContent,/Oculto pelo canal/);
+  assert.equal(d.querySelectorAll('#channel-stats-result [onerror]').length,0);
+  assert.match(d.querySelector('.channel-private').textContent,/não são dados públicos/);
+  submit();await delay(30);
+  assert.match(d.querySelector('#channel-stats-status').textContent,/Mantendo os dados anteriores/);
+  assert.equal(d.querySelectorAll('.channel-kpis article').length,3);
+  assert.equal(d.querySelector('#channel-stats-form button').disabled,false);
+  assert.deepEqual(errors,[]);
+ }finally{dom.window.close()}
+});
+
+test('switching from a dark Horizon theme to Luz Natural clears stale inline palette',async()=>{
+ const {dom,w,d}=await open({theme:'ocean',motionWallpaper:'boreal'});try{
+  assert.equal(d.body.style.getPropertyValue('--h-surface'),'#0b2431');
+  w.eval("selectTheme('adl-day')");
+  assert.equal(d.body.dataset.theme,'adl-day');
+  assert.equal(d.body.classList.contains('horizon-theme'),false);
+  for(const name of ['base','surface','ink','muted'])assert.equal(d.body.style.getPropertyValue('--h-'+name),'');
+  assert.equal(d.documentElement.style.colorScheme,'light');
+  w.PeepStudio.themes('style');assert.equal(d.querySelector('dialog').open,true);
+ }finally{dom.window.close()}
+});

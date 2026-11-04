@@ -308,6 +308,9 @@ class Handler(BaseHTTPRequestHandler):
                 state = cookies['kg_oauth'].value if 'kg_oauth' in cookies else ''
                 YOUTUBE.callback(urllib.parse.parse_qs(path.query), state)
                 self.redirect('/#youtube-section', 'kg_oauth=; HttpOnly; SameSite=Lax; Path=/api/youtube/callback; Max-Age=0')
+            elif path.path == '/api/youtube/channel':
+                query = urllib.parse.parse_qs(path.query)
+                self.json_response(YOUTUBE.channel_stats(query.get('channel', [''])[0]))
             elif path.path == '/api/youtube/feed':
                 self.json_response(YOUTUBE.feed())
             elif path.path == '/api/markets':
