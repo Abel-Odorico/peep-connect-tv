@@ -10,3 +10,7 @@
 .peep-brand-art.original-lettering[data-logo-mode=dark] .peep-lettering-contrast{display:block;position:absolute;inset:0;clip-path:inset(0 0 0 43%);filter:brightness(0) invert(.94)}
 @media(max-width:1100px){.peep-brand-art.original-lettering{width:190px;height:52px}}
 @media(max-width:760px){.peep-brand-art.original-lettering{width:160px;height:46px}}
+/* 2170px transparent master stays crisp on a 1080p TV; enough room for the full custom lettering. */
+.peep-brand-art.original-lettering{width:308px;height:84px}
+@media(max-width:1400px){.peep-brand-art.original-lettering{width:250px;height:68px}}
+@media(max-width:760px){.peep-brand-art.original-lettering{width:180px;height:50px}}
