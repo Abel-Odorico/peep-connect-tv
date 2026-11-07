@@ -121,6 +121,7 @@ public final class MainActivity extends Activity {
     }
 
     public final class TVActions {
+        @JavascriptInterface public String installedApps() { return InstalledApps.list(MainActivity.this); }
         @JavascriptInterface public String deviceMetrics() { return peepMetrics == null ? "{}" : peepMetrics.snapshot(); }
         @JavascriptInterface public String bluetoothStatus() {
             if (peepBluetooth != null) runOnUiThread(() -> peepBluetooth.start());
@@ -170,7 +171,11 @@ public final class MainActivity extends Activity {
                 case "jellyfin": target = "org.jellyfin.androidtv"; break;
                 case "max": target = "com.wbd.stream"; break;
                 case "appletv": target = "com.apple.atve.androidtv.appletv"; break;
-                default: message("Aplicativo ainda não integrado."); return;
+                default:
+                    if (id == null || !id.matches("[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)+")) {
+                        message("Aplicativo ainda não integrado."); return;
+                    }
+                    target = id;
             }
             runOnUiThread(() -> {
                 Intent launch = getPackageManager().getLeanbackLaunchIntentForPackage(target);
@@ -193,6 +198,6 @@ public final class MainActivity extends Activity {
         web.evaluateJavascript("(function(){if(window.PeepIdle&&PeepIdle.active){PeepIdle.wake();return}var p=document.querySelector('dialog[open]');if(p){p.close();return}if(typeof page!=='undefined'&&page!=='home'){navigate('home');return}PeepTV.close()})()", null);
     }
     @Override protected void onPause() { web.onPause(); web.pauseTimers(); super.onPause(); }
-    @Override protected void onResume() { super.onResume(); if (web != null) { web.onResume(); web.resumeTimers(); } }
+    @Override protected void onResume() { super.onResume(); if (web != null) { web.onResume(); web.resumeTimers(); web.evaluateJavascript("window.dispatchEvent(new Event('peep-apps-refresh'))", null); } }
     @Override protected void onDestroy() { if (peepBluetooth != null) peepBluetooth.close(); if (web != null) { web.stopLoading(); web.removeJavascriptInterface("PeepTV"); web.destroy(); } super.onDestroy(); }
 }

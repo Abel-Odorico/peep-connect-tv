@@ -158,11 +158,16 @@ class YouTube:
                 attempt['status'] = 'error'
                 return {'status': 'error'}
             data['_client_kind'] = 'device'
-            self.save_tokens(data)
+            try:
+                channel = self.channel_for_token(data['access_token'])
+                self.save_account(channel, data)
+            except YouTubeError:
+                attempt['status'] = 'error'
+                return {'status': 'error'}
             self.feed_cache = None
             attempt['status'] = 'connected'
             attempt.pop('code', None)
-            return {'status': 'connected'}
+            return {'status': 'connected', 'account': channel['title']}
 
     def device_cancel(self, session):
         with self.lock:
@@ -171,12 +176,67 @@ class YouTube:
                 self.device_attempt = None
             return {'ok': True}
 
-    def tokens(self):
+    def legacy_tokens(self):
         try:
             data = json.loads((self.private / 'youtube-tokens.json').read_text())
             return data if isinstance(data, dict) else {}
         except (OSError, ValueError):
             return {}
+
+    def accounts_data(self):
+        try:
+            data = json.loads((self.private / 'youtube-accounts.json').read_text())
+            if isinstance(data, dict) and isinstance(data.get('accounts'), dict):
+                return data
+        except (OSError, ValueError):
+            pass
+        old = self.legacy_tokens()
+        return {'active': 'legacy' if old else '', 'accounts': {'legacy': {'title': 'Conta conectada anteriormente', 'tokens': old}} if old else {}}
+
+    def write_accounts(self, data):
+        self.private.mkdir(mode=0o700, exist_ok=True)
+        temp = self.private / 'youtube-accounts.tmp'
+        fd = os.open(temp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, 'w') as file:
+            os.chmod(temp, 0o600)
+            json.dump(data, file)
+        os.replace(temp, self.private / 'youtube-accounts.json')
+        (self.private / 'youtube-tokens.json').unlink(missing_ok=True)
+
+    def channel_for_token(self, token):
+        url = 'https://www.googleapis.com/youtube/v3/channels?' + urllib.parse.urlencode({'part': 'snippet', 'mine': 'true'})
+        items = self.request(url, token=token).get('items', [])
+        channel = items[0] if items else {}
+        cid = channel.get('id', '')
+        if not re.fullmatch(r'UC[A-Za-z0-9_-]{22}', cid):
+            raise YouTubeError('O Google não identificou um canal do YouTube nesta autorização. Escolha um canal no celular e tente novamente.', 400)
+        snippet = channel.get('snippet', {})
+        title = snippet.get('title', '').strip()[:100] if isinstance(snippet.get('title'), str) else ''
+        image = snippet.get('thumbnails', {}).get('default', {}).get('url', '')
+        parsed = urllib.parse.urlsplit(image)
+        image = image if parsed.scheme == 'https' and parsed.hostname in ('yt3.ggpht.com', 'yt3.googleusercontent.com') else ''
+        return {'id': cid, 'title': title or 'Canal do YouTube', 'image': image}
+
+    def save_account(self, channel, tokens):
+        data = self.accounts_data()
+        cid = channel['id']
+        data['accounts'][cid] = {**channel, 'tokens': tokens}
+        data['active'] = cid
+        self.write_accounts(data)
+
+    def tokens(self):
+        data = self.accounts_data()
+        return data['accounts'].get(data['active'], {}).get('tokens', {})
+
+    def select_account(self, account_id):
+        with self.lock:
+            data = self.accounts_data()
+            if account_id not in data['accounts']:
+                raise YouTubeError('Canal não encontrado neste painel.', 404)
+            data['active'] = account_id
+            self.write_accounts(data)
+            self.feed_cache = None
+            return self.status()
 
     def status(self):
         try:
@@ -191,7 +251,11 @@ class YouTube:
         except YouTubeError:
             device_configured = False
         connected = (device_configured if token.get('_client_kind') == 'device' else configured) and bool(token.get('refresh_token') or token.get('access_token'))
-        return {'configured': configured, 'deviceConfigured': device_configured, 'deviceFlowVersion': 1, 'channelStatsVersion': 1, 'apiConfigured': bool(self.api_key()), 'connected': connected, 'account': self.feed_cache.get('account') if self.feed_cache and connected else None}
+        data = self.accounts_data()
+        entries = [{'id': cid, 'title': info.get('title', 'Canal do YouTube'), 'image': info.get('image', '')} for cid, info in data['accounts'].items() if info.get('tokens')]
+        active = data['active']
+        current = data['accounts'].get(active, {})
+        return {'configured': configured, 'deviceConfigured': device_configured, 'deviceFlowVersion': 2, 'channelStatsVersion': 1, 'apiConfigured': bool(self.api_key()), 'connected': connected, 'account': (self.feed_cache.get('account') if self.feed_cache else current.get('title')) if connected else None, 'accounts': entries, 'active': active if connected else ''}
 
     def public_feed(self):
         with self.lock:
@@ -294,6 +358,13 @@ class YouTube:
             return data
 
     def save_tokens(self, data):
+        if (self.private / 'youtube-accounts.json').exists():
+            state = self.accounts_data()
+            active = state['active']
+            if active in state['accounts']:
+                state['accounts'][active]['tokens'] = data
+                self.write_accounts(state)
+                return
         self.private.mkdir(mode=0o700, exist_ok=True)
         temp = self.private / 'youtube-tokens.tmp'
         fd = os.open(temp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
@@ -363,7 +434,7 @@ class YouTube:
             if SCOPE not in data.get('scope', '').split():
                 raise YouTubeError('A permissão de leitura do YouTube não foi concedida.', 403)
             data['expires_at'] = time.time() + int(data.get('expires_in', 3600))
-            self.save_tokens(data)
+            self.save_account(self.channel_for_token(data['access_token']), data)
             self.feed_cache = None
 
     def access_token(self):
@@ -429,9 +500,15 @@ class YouTube:
             self.feed_cache = {'account': account, 'results': sorted(videos.values(), key=lambda x: x['published'], reverse=True)[:12], 'channelCount': len(channels), 'limited': bool(subs.get('nextPageToken')) or len(subs.get('items', [])) > 12, 'partial': failures > 0, 'at': time.time(), 'personalized': True, 'mode': 'subscriptions'}
             return self.feed_cache
 
-    def disconnect(self):
+    def disconnect(self, account_id=None):
         with self.lock:
-            (self.private / 'youtube-tokens.json').unlink(missing_ok=True)
+            data = self.accounts_data()
+            cid = account_id or data['active']
+            if cid and cid in data['accounts']:
+                del data['accounts'][cid]
+                if data['active'] == cid:
+                    data['active'] = next(iter(data['accounts']), '')
+                self.write_accounts(data)
             self.feed_cache = None
             self.pending.clear()
             self.device_attempt = None

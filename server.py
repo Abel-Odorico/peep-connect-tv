@@ -239,7 +239,7 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_POST(self):
-        actions = {'/api/youtube/disconnect': 'disconnect', '/api/youtube/device/start': 'youtube-device',
+        actions = {'/api/youtube/disconnect': 'disconnect', '/api/youtube/select': 'youtube-select', '/api/youtube/device/start': 'youtube-device',
                    '/api/youtube/device/poll': 'youtube-device', '/api/youtube/device/cancel': 'youtube-device'}
         expected = actions.get(self.path)
         if not expected or self.headers.get('Host') not in (f'127.0.0.1:{PORT}', f'localhost:{PORT}') or self.headers.get('Origin') not in (f'http://127.0.0.1:{PORT}', f'http://localhost:{PORT}') or self.headers.get('X-Konka-Action') != expected:
@@ -249,6 +249,15 @@ class Handler(BaseHTTPRequestHandler):
             if self.path == '/api/youtube/disconnect':
                 YOUTUBE.disconnect()
                 self.json_response({'ok': True})
+            elif self.path == '/api/youtube/select':
+                size = int(self.headers.get('Content-Length', '0'))
+                if size < 1 or size > 256:
+                    raise ValueError()
+                body = json.loads(self.rfile.read(size))
+                cid = body.get('id') if isinstance(body, dict) else None
+                if not isinstance(cid, str) or not re.fullmatch(r'UC[A-Za-z0-9_-]{22}|legacy', cid):
+                    raise ValueError()
+                self.json_response(YOUTUBE.select_account(cid))
             elif self.path.endswith('/start'):
                 self.json_response(YOUTUBE.device_begin())
             else:

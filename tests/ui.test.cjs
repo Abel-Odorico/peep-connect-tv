@@ -9,7 +9,7 @@ function fixture(){
  const at=Date.now()/1000;
  return {connected:true,at,source:'Android nativo',sampleId:1,model:'Test TV',android:'14',ram:{totalBytes:1610612736,availableBytes:350000000},network:{interface:'wifi',transport:'Wi-Fi',rssi:-50,rxLinkMbps:433,txLinkMbps:433,frequencyMHz:5200,traffic:{downloadMbps:.0004,uploadMbps:0}},storage:{availableBytes:4000000000},uptimeSeconds:3600};
 }
-async function open(initialPrefs){
+async function open(initialPrefs,installedApps){
  let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
  const files=[...html.matchAll(/<script src="([^"]+)" defer><\/script>/g)].map(m=>m[1]);
  html=html.replace(/<script src="[^"]+" defer><\/script>/g,'').replace(/<link[^>]*stylesheet[^>]*>/g,'');
@@ -22,6 +22,7 @@ async function open(initialPrefs){
   w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'))};
   w.setInterval=()=>1;
   w.PeepTV={deviceMetrics:()=>JSON.stringify(fixture())};
+  if(installedApps)w.PeepTV.installedApps=()=>JSON.stringify(installedApps);
   w.fetch=async input=>{
    const url=new URL(input,'http://127.0.0.1:8770');let data={};
    if(url.pathname==='/api/health')data={ok:true};
@@ -35,6 +36,20 @@ async function open(initialPrefs){
   };
  }});await delay(30);return {dom,w:dom.window,d:dom.window.document,errors};
 }
+test('TV library lists all launchable apps with their native icons',async()=>{
+ const icon='data:image/png;base64,aGVsbG8=';
+ const {dom,w,d,errors}=await open(null,[
+  {package:'com.netflix.ninja',name:'Netflix',icon},
+  {package:'example.tv.player',name:'Player de exemplo',icon}
+ ]);
+ try{
+  d.querySelector('[data-page=apps]').click();
+  assert.equal(d.querySelectorAll('#apps .app-card').length,2);
+  assert.equal(d.querySelectorAll('#apps .native-app-icon').length,2);
+  assert.equal(d.querySelector('[data-id="example.tv.player"] .card-name').textContent,'Player de exemplo');
+  assert.deepEqual(errors,[]);
+ }finally{w.close()}
+});
 test('theme keyboard activates exactly one tab without global spatial navigation',async()=>{
  const {dom,w,d,errors}=await open();try{
   w.PeepStudio.themes('style');assert.equal(d.querySelectorAll('[role=tab]').length,5);

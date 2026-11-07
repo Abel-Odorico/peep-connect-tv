@@ -24,7 +24,7 @@ class YouTubeTests(unittest.TestCase):
 
     def test_missing_configuration_is_explicit(self):
         (self.yt.private / 'google-client.json').unlink()
-        self.assertEqual(self.yt.status(), {'configured': False, 'deviceConfigured': False, 'deviceFlowVersion': 1, 'channelStatsVersion': 1, 'apiConfigured': False, 'connected': False, 'account': None})
+        self.assertEqual(self.yt.status(), {'configured': False, 'deviceConfigured': False, 'deviceFlowVersion': 2, 'channelStatsVersion': 1, 'apiConfigured': False, 'connected': False, 'account': None, 'accounts': [], 'active': ''})
         with self.assertRaises(YouTubeError):
             self.yt.begin(8770)
 
@@ -36,12 +36,16 @@ class YouTubeTests(unittest.TestCase):
         self.assertNotIn('client_secret', params)
         with self.assertRaises(YouTubeError):
             self.yt.callback({'state': [state], 'code': ['example']}, 'wrong-browser')
-        with patch.object(self.yt, 'request', return_value={'access_token': 'test-token', 'refresh_token': 'test-refresh', 'scope': SCOPE, 'expires_in': 3600}) as request:
+        def oauth_response(url, *args, **kwargs):
+            if url.endswith('/token'):
+                return {'access_token': 'test-token', 'refresh_token': 'test-refresh', 'scope': SCOPE, 'expires_in': 3600}
+            return {'items': [{'id': 'UC' + 'x'*22, 'snippet': {'title': 'Meu canal'}}]}
+        with patch.object(self.yt, 'request', side_effect=oauth_response) as request:
             self.yt.callback({'state': [state], 'code': ['example']}, state)
-            self.assertIn('code_verifier', request.call_args.args[1])
+            self.assertIn('code_verifier', request.call_args_list[0].args[1])
             with self.assertRaises(YouTubeError):
                 self.yt.callback({'state': [state], 'code': ['example']}, state)
-        self.assertEqual(os.stat(self.yt.private / 'youtube-tokens.json').st_mode & 0o777, 0o600)
+        self.assertEqual(os.stat(self.yt.private / 'youtube-accounts.json').st_mode & 0o777, 0o600)
         self.assertNotIn('access_token', json.dumps(self.yt.status()))
 
     def test_denied_scope_does_not_save_credentials(self):

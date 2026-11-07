@@ -7,6 +7,7 @@ from pathlib import Path
 from youtube_service import YouTube, YouTubeError, SCOPE
 
 class DeviceTests(unittest.TestCase):
+    channel_id = 'UC' + 'a'*22
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
@@ -43,14 +44,30 @@ class DeviceTests(unittest.TestCase):
 
     def test_success_private_tokens_and_device_refresh(self):
         self.begin()
-        result = self.poll({'access_token': 'fixture-access', 'refresh_token': 'fixture-refresh', 'scope': SCOPE, 'expires_in': 1})
-        self.assertEqual(result, {'status': 'connected'})
+        with patch.object(self.yt, 'request', return_value={'items': [{'id': self.channel_id, 'snippet': {'title': 'Além do Alcance'}}]}):
+            result = self.poll({'access_token': 'fixture-access', 'refresh_token': 'fixture-refresh', 'scope': SCOPE, 'expires_in': 1})
+        self.assertEqual(result, {'status': 'connected', 'account': 'Além do Alcance'})
         self.assertEqual(self.yt.tokens()['_client_kind'], 'device')
         self.assertTrue(self.yt.status()['connected'])
         with patch.object(self.yt, 'request', return_value={'access_token': 'new-fixture', 'expires_in': 3600}) as request:
             self.assertEqual(self.yt.access_token(), 'new-fixture')
             self.assertEqual(request.call_args.args[1]['client_id'], 'test.apps.googleusercontent.com')
-        self.assertEqual((self.yt.private / 'youtube-tokens.json').stat().st_mode & 0o777, 0o600)
+        self.assertEqual((self.yt.private / 'youtube-accounts.json').stat().st_mode & 0o777, 0o600)
+
+    def test_two_channels_switch_without_exposing_tokens(self):
+        first = {'id': 'UC'+'a'*22, 'title': 'Abel', 'image': ''}
+        second = {'id': 'UC'+'b'*22, 'title': 'Além do Alcance', 'image': ''}
+        self.yt.save_account(first, {'access_token': 'first-secret', 'refresh_token': 'first-refresh', '_client_kind': 'device'})
+        self.yt.save_account(second, {'access_token': 'second-secret', 'refresh_token': 'second-refresh', '_client_kind': 'device'})
+        state = self.yt.status()
+        self.assertEqual(len(state['accounts']), 2)
+        self.assertEqual(state['active'], second['id'])
+        self.assertNotIn('secret', json.dumps(state))
+        self.yt.select_account(first['id'])
+        self.assertEqual(self.yt.tokens()['access_token'], 'first-secret')
+        self.yt.disconnect()
+        self.assertEqual(self.yt.status()['active'], second['id'])
+        self.assertEqual(len(self.yt.status()['accounts']), 1)
 
     def test_denial_missing_scope_and_cancel_never_store_tokens(self):
         for result in [{'error':'access_denied'}, {'access_token':'fixture', 'refresh_token':'fixture', 'scope':'profile'}]:
