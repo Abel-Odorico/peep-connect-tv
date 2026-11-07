@@ -69,6 +69,8 @@ test('channel has its own tab, reads the connected channel and charts only obser
   assert.equal(d.querySelector('#channel-stats-form').closest('details').open,false);
   revision=1;d.querySelector('#channel-refresh').click();await delay(60);
   assert.equal(d.querySelector('#channel-history-count').textContent,'2 amostras');
+  assert.match(d.querySelector('#channel-subs-note').textContent,/^\+3 inscritos/);
+  assert.match(d.querySelector('#channel-videos-note').textContent,/^0 vídeos/);
   assert.match(d.querySelector('#channel-history-note').textContent,/\+50 visualizações/);
   assert.deepEqual(errors,[]);
  }finally{w.close()}

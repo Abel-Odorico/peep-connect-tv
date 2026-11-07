@@ -10,6 +10,11 @@
  let diagnostics=null,diagError='',busy=false,lastAt=null,lastDiagsAt=null;const history={ram:[],cpu:[],down:[],up:[]};
  const cap=(value,min,max)=>Math.max(min,Math.min(max,value));
  function push(name,value){if(Number.isFinite(value)){history[name].push(value);if(history[name].length>60)history[name].shift()}}
+ function usageSummary(series){
+  if(!series.length)return 'Histórico indisponível';
+  const average=series.reduce((total,value)=>total+value,0)/series.length;
+  return 'Média '+livingNum(average,1)+'% · pico '+livingNum(Math.max(...series),1)+'% · '+series.length+' leitura'+(series.length===1?'':'s');
+ }
  function setDial(id,value,display,sub){const good=Number.isFinite(value);$('#perf-'+id+'-arc').setAttribute('stroke-dasharray',(good?cap(value,0,100):0)+' 100');richSetText('perf-'+id+'-value',display);richSetText('perf-'+id+'-sub',sub);$('#perf-'+id+'-needle-dot').style.opacity=good?'1':'.2'}
  function paint(){
   const d=liveTV,valid=!!d&&!tvError&&Date.now()/1000-d.at<45,total=d?.ram?.totalBytes,available=d?.ram?.availableBytes,ram=valid&&total&&Number.isFinite(available)?100*(1-available/total):null;
@@ -19,7 +24,7 @@
   setDial('cpu',cpu,Number.isFinite(cpu)?Math.round(cpu)+'%':'—',diagnostics?.cpu?.warmingUp?'Coletando 2ª amostra':diagError?'Consulta indisponível':diagnostics?.cpu?.available===false?'Leitura restrita pelo Android':'Uso total entre amostras');
   const observedPeak=Math.max(0,...history.down,...history.up),peak=Math.max(.1,observedPeak);setDial('network',Number.isFinite(down)?down/peak*100:null,Number.isFinite(down)?livingNum(down,2):'—','↓ Download · Mb/s');
   richSetText('perf-ram-hint',valid?'Sistema inteiro':'Sem leitura atual');richSetText('perf-cpu-hint',cpuFresh?'Leitura do Android':'Aguardando CPU');richSetText('perf-network-hint','↑ '+livingNum(up,2)+' Mb/s');
-  richSetText('perf-ram-note',valid?gib(available)+' GiB disponíveis':'Conecte a TV por ADB');richSetText('perf-cpu-note','Sem estimativas quando a leitura não está disponível');richSetText('perf-network-note','Pico observado: '+livingNum(observedPeak,2)+' Mb/s');
+  richSetText('perf-ram-note',usageSummary(history.ram));richSetText('perf-cpu-note',usageSummary(history.cpu));richSetText('perf-network-note','Pico observado: '+livingNum(observedPeak,2)+' Mb/s');
   livingSetChart('perf-ram-line',history.ram,[0,100],'Uso da RAM em percentual');livingSetChart('perf-cpu-line',history.cpu,[0,100],'Uso da CPU em percentual');livingSetChart('perf-network-line',history.down,[0,peak],'Download em Mb/s');
   let upload=$('#perf-upload-line');if(!upload){upload=document.createElementNS('http://www.w3.org/2000/svg','path');upload.id='perf-upload-line';upload.classList.add('perf-upload-line');$('#perf-network-line').closest('svg').append(upload)}upload.setAttribute('d',livingPath(history.up,0,peak));
   richSetText('perf-state',valid?'Konka conectada':'Sem leitura atual da Konka');richSetText('perf-updated',d?'Leitura '+new Date(d.at*1000).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo'}):'Sem horário');

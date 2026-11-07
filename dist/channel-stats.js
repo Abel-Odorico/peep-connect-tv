@@ -21,11 +21,21 @@
  const when=value=>new Date(value).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
  const state={data:null,key:'',loading:false,requestedAt:0,revision:0};
  function samples(id){try{const rows=JSON.parse(localStorage.getItem('peep-channel-history:'+id)||'[]');return Array.isArray(rows)?rows.filter(x=>x&&Number.isFinite(x.at)&&Number.isFinite(x.views)).slice(-20):[]}catch{return []}}
- function sample(data){const rows=samples(data.id),last=rows.at(-1);if(Number.isFinite(data.views)&&last?.at!==data.at){rows.push({at:data.at,views:data.views,subscribers:data.subscribers,videoCount:data.videoCount});try{localStorage.setItem('peep-channel-history:'+data.id,JSON.stringify(rows.slice(-20)))}catch{}}return rows.slice(-20)}
+ function sample(data){const rows=samples(data.id),last=rows.at(-1);if(Number.isFinite(data.views)&&Number.isFinite(data.at)&&(!last||data.at>last.at)){rows.push({at:data.at,views:data.views,subscribers:data.subscribersHidden?null:data.subscribers,videoCount:data.videoCount});try{localStorage.setItem('peep-channel-history:'+data.id,JSON.stringify(rows.slice(-20)))}catch{}}return rows.slice(-20)}
  function trend(data){const rows=sample(data),svg=section.querySelector('.channel-history svg'),line=el('channel-history-line'),fill=el('channel-history-fill'),dot=el('channel-history-last');
+  const previous=rows.length>1?rows[rows.length-2]:null;
+  for(const [key,id,label] of [['views','views','visualizações'],['subscribers','subs','inscritos'],['videoCount','videos','vídeos']]){
+   const value=data[key];
+   const prior=previous?.[key];
+   const note=el('channel-'+id+'-note');
+   if(key==='subscribers'&&data.subscribersHidden){note.textContent='Contagem privada';continue}
+   if(!Number.isFinite(value)||!Number.isFinite(prior)){note.textContent='Sem comparação disponível';continue}
+   const delta=value-prior;
+   note.textContent=(delta>0?'+':'')+number(delta)+' '+label+' desde '+new Date(previous.at*1000).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+  }
   el('channel-history-count').textContent=rows.length+' amostra'+(rows.length===1?'':'s');
   if(!rows.length){line.setAttribute('points','');fill.setAttribute('d','');dot.setAttribute('visibility','hidden');return}
-  const min=Math.min(...rows.map(r=>r.views)),max=Math.max(...rows.map(r=>r.views)),spread=Math.max(1,max-min),points=rows.map((r,i)=>[rows.length===1?300:12+i*576/(rows.length-1),142-(r.views-min)/spread*112]);
+  const min=Math.min(...rows.map(r=>r.views)),max=Math.max(...rows.map(r=>r.views)),spread=Math.max(1,max-min),points=rows.map(r=>[rows.length===1?300:12+(r.at-rows[0].at)*576/(rows.at(-1).at-rows[0].at||1),142-(r.views-min)/spread*112]);
   line.setAttribute('points',points.map(p=>p.join(',')).join(' '));fill.setAttribute('d',rows.length>1?'M12 142L'+points.map(p=>p.join(' ')).join('L')+'L588 142Z':'');dot.setAttribute('cx',points.at(-1)[0]);dot.setAttribute('cy',points.at(-1)[1]);dot.setAttribute('visibility','visible');
   svg.setAttribute('aria-label','Visualizações acumuladas em '+rows.length+' consultas observadas; de '+number(rows[0].views)+' a '+number(rows.at(-1).views));
   el('channel-history-start').textContent=when(rows[0].at*1000);el('channel-history-end').textContent=when(rows.at(-1).at*1000);
