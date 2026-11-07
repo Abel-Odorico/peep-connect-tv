@@ -347,3 +347,7 @@ test('switching from a dark Horizon theme to Luz Natural clears stale inline pal
   w.PeepStudio.themes('style');assert.equal(d.querySelector('dialog').open,true);
  }finally{dom.window.close()}
 });
+
+test('GestorPeep dashboard is reachable again from the skin',async()=>{
+ const {dom,w,d,errors}=await open();try{let count=0;w.PeepTV.openDashboard=()=>count++;const button=d.querySelector('#gestorpeep-dashboard');assert.ok(button);button.click();assert.equal(count,1);assert.match(button.getAttribute('aria-label'),/GestorPeep/);assert.deepEqual(errors,[]);}finally{w.close()}
+});

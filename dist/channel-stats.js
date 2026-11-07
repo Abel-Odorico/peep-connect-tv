@@ -1,6 +1,10 @@
 /* Canal: dados públicos da API; tendências somente entre consultas realmente observadas. */
 (()=>{
  'use strict';
+ const dashboard=document.createElement('button');dashboard.className='nav';dashboard.id='gestorpeep-dashboard';
+ dashboard.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="13" rx="3"/><path d="M8 21h8m-4-4v4M7 13v-3m5 3V8m5 5V7"/></svg><span class="nav-label">Painel TV</span>';
+ $('#themes').before(dashboard);describeControl(dashboard,'Dashboard GestorPeep','Abrir o painel de indicadores da TV');
+ dashboard.onclick=()=>{if(typeof PeepTV!=='undefined'&&typeof PeepTV.openDashboard==='function')PeepTV.openDashboard();else if(typeof PeepTV!=='undefined')notify('Atualize o aplicativo da TV para abrir o Dashboard GestorPeep.');else window.open('https://gestorpeep.com/painel_tv.php','_blank','noopener,noreferrer')};
  const nav=document.createElement('button');
  nav.className='nav';nav.dataset.page='channel';
  nav.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="5" width="19" height="14" rx="4"/><path d="m10 9 5 3-5 3z"/></svg><span class="nav-label">Canal</span>';

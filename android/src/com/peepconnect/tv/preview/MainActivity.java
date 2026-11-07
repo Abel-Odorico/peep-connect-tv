@@ -134,6 +134,12 @@ public final class MainActivity extends Activity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(painel);
         painel.requestFocus();
+        if (web != null) {
+            web.stopLoading(); web.removeJavascriptInterface("PeepTV"); web.destroy(); web = null;
+            skinCarregada = false;
+            if (peepBluetooth != null) { peepBluetooth.close(); peepBluetooth = null; }
+            peepMetrics = null;
+        }
         painel.loadUrl(PAINEL);
     }
 
@@ -177,6 +183,7 @@ public final class MainActivity extends Activity {
     }
 
     public final class TVActions {
+        @JavascriptInterface public void openDashboard() { runOnUiThread(() -> { if (!isFinishing() && painel == null) abrirPainel(); }); }
         @JavascriptInterface public String installedApps() { return InstalledApps.list(MainActivity.this); }
         @JavascriptInterface public String deviceMetrics() { return peepMetrics == null ? "{}" : peepMetrics.snapshot(); }
         @JavascriptInterface public String bluetoothStatus() {
