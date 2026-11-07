@@ -11,6 +11,8 @@
 - `ambient-next.js` / `ambient-next.css`: composição visual, previsão em escala comum, gráficos reais de mercado, atualidade e origem dos dados de Ambiente; consultar `docs/AMBIENT-0.16.2.md`. `catalog.js`, `youtube.js`, `wallpapers.js`: conteúdo externo e imagens.
 - `MainActivity.java`: WebView, atalhos e bridge. `DeviceMetrics.java`: amostra local read-only. `BluetoothStatus.java`: conexões autorizadas pelo Android.
 - `youtube.js` / `youtube_service.py`: OAuth de TV com QR local, código, polling limitado pelo servidor e cancelamento; credenciais separadas de desktop em `.private/google-tv-client.json`. Ver `docs/GOOGLE-DEVICE-0.16.5.md`.
+- `channel-stats.js` / `channel-stats.css`: guia Canal, séries locais e painel de vídeos. O script é carregado após `tv-layout.js`, `performance-pro.js` e outros módulos que encapsulam `navigate`; adicionar botões de navegação exige ligar os handlers depois da criação. O backend `youtube_service.py` expõe `/api/youtube/channel` e `channelStatsVersion=2`; ver `docs/CHANNEL-EXPANDED.md` e [contrato dos dados](channel-data.md).
+- `demo/`: prévia estática publicada pelo GitHub Pages; reutiliza `dist/channel-stats.js` e `dist/channel-stats.css` com respostas fictícias explícitas. Não mover tokens nem dados reais para a demo ou para o repositório público.
 - `server.py`: HTTP loopback, Host/Origin, arquivos somente dist; `tmdb_service.py`, `youtube_service.py`, `ambient_data.py`, `performance_data.py`: serviços.
 
 O APK depende do serviço no computador e ADB reverse. Não afirmar que é launcher HOME ou serviço autônomo. Credenciais, identidade e assinatura ficam em .private e nunca no frontend.
