@@ -50,6 +50,12 @@ class InstallerSafetyTests(unittest.TestCase):
         data = 'adb-a _adb-tls-pairing._tcp 192.0.2.10:30000\nadb-a _adb-tls-connect._tcp. 192.0.2.10:40001\nadb-b _adb-tls-connect._tcp 192.0.2.20:40002\nadb-a _adb-tls-connect._tcp 192.0.2.10:40001'
         self.assertEqual(installer.mdns_candidates(data), ['192.0.2.10:40001'])
 
+    def test_mdns_recovers_trusted_tv_after_ip_change(self):
+        data = ('adb-example-device _adb._tcp 192.0.2.30:5555\n'
+                'adb-other-device _adb._tcp 192.0.2.40:5555\n'
+                'adb-example-device-pair _adb-tls-pairing._tcp 192.0.2.30:30000')
+        self.assertEqual(installer.mdns_candidates(data), ['192.0.2.30:5555'])
+
     def test_discovers_new_port_after_old_port_fails(self):
         def run(args, **kwargs):
             if args[-1] == 'get-state':

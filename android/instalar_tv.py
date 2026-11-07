@@ -49,11 +49,16 @@ def mdns_candidates(output):
     addresses = []
     for line in output.splitlines():
         fields = line.split()
-        if len(fields) >= 3 and fields[-2].rstrip('.') == '_adb-tls-connect._tcp':
-            address = fields[-1]
-            if KNOWN_IP and re.fullmatch(re.escape(KNOWN_IP) + r':\d{1,5}', address) and 0 < int(address.rsplit(':', 1)[1]) < 65536:
-                if address not in addresses:
-                    addresses.append(address)
+        if len(fields) < 3 or fields[-2].rstrip('.') not in ('_adb-tls-connect._tcp', '_adb._tcp'):
+            continue
+        name, service, address = fields[0], fields[-2].rstrip('.'), fields[-1]
+        host, separator, port = address.rpartition(':')
+        if not separator or not re.fullmatch(r'\d{1,5}', port) or not 0 < int(port) < 65536:
+            continue
+        trusted_name = bool(KNOWN_IDENTITY and (name.lower() == KNOWN_IDENTITY.rstrip('-').lower() or name.lower().startswith(KNOWN_IDENTITY.lower())))
+        trusted_address = bool(KNOWN_IP and host == KNOWN_IP and service == '_adb-tls-connect._tcp')
+        if (trusted_name or trusted_address) and address not in addresses:
+            addresses.append(address)
     return addresses
 
 
