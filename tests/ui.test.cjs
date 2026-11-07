@@ -58,7 +58,7 @@ test('channel has its own tab, reads the connected channel and charts only obser
   w.fetch=async input=>{
    const pathname=new URL(input,'http://127.0.0.1:8770').pathname;
    const data=pathname==='/api/youtube/status'?{connected:true,active:id,accounts:[{id,title:'Além do Alcance',image:''}]}:
-    pathname==='/api/youtube/channel'?{id,title:'Além do Alcance',handle:'@alemdoalcance',at:1700000000+revision*900,source:'YouTube Data API v3',views:1000+revision*50,subscribers:100+revision*3,videoCount:2,videos:[{id:'abcdefghijk',title:'Vídeo',views:200,likes:20,comments:2,published:'2026-10-10T12:00:00Z'}]}:{};
+    pathname==='/api/youtube/channel'?{id,title:'Além do Alcance',handle:'@alemdoalcance',createdAt:'2023-03-04T00:00:00Z',at:1700000000+revision*900,source:'YouTube Data API v3',views:1000+revision*50,subscribers:100+revision*3,videoCount:2,videos:[{id:'abcdefghijk',title:'Vídeo',views:200,likes:20,comments:2,duration:'PT2M33S',published:'2026-10-10T12:00:00Z'},{id:'lmnopqrstuv',title:'Outro vídeo',views:100,likes:null,comments:null,published:'2026-10-08T12:00:00Z'}]}:{};
    return new Response(JSON.stringify(data),{headers:{'Content-Type':'application/json'}});
   };
   assert.equal(d.querySelector('#youtube-section #channel-stats-form'),null);
@@ -66,10 +66,19 @@ test('channel has its own tab, reads the connected channel and charts only obser
   assert.equal(d.querySelector('#channel-title').textContent,'Além do Alcance');
   assert.equal(d.querySelector('#channel-views').textContent,'1.000');
   assert.equal(d.querySelector('#channel-history-count').textContent,'1 amostra');
+  assert.equal(d.querySelector('#channel-avg-views').textContent,'150');
+  assert.equal(d.querySelector('#channel-median-views').textContent,'150');
+  assert.equal(d.querySelector('#channel-interactions').textContent,'22');
+  assert.match(d.querySelector('#channel-video-list').textContent,/2:33/);
+  assert.match(d.querySelector('#channel-created').textContent,/2023/);
   assert.equal(d.querySelector('#channel-stats-form').closest('details').open,false);
   revision=1;d.querySelector('#channel-refresh').click();await delay(60);
   assert.equal(d.querySelector('#channel-history-count').textContent,'2 amostras');
   assert.match(d.querySelector('#channel-history-note').textContent,/\+50 visualizações/);
+  assert.equal(d.querySelector('#channel-delta-views').textContent,'+50');
+  d.querySelector('[data-series=subscribers]').click();
+  assert.equal(d.querySelector('[data-series=subscribers]').getAttribute('aria-pressed'),'true');
+  assert.match(d.querySelector('#channel-history-note').textContent,/\+3 inscritos/);
   assert.deepEqual(errors,[]);
  }finally{w.close()}
 });
@@ -315,6 +324,8 @@ test('optional public channel search escapes titles and preserves results on err
   submit();submit();await delay(30);
   assert.equal(calls,1);assert.equal(d.querySelectorAll('.channel-kpis article').length,3);
   assert.equal(d.querySelector('#channel-subs').textContent,'Ocultos');
+  assert.equal(d.querySelector('[data-series=subscribers]').disabled,true);
+  assert.equal(d.querySelector('#channel-delta-subs').textContent,'—');
   assert.equal(d.querySelectorAll('#channel-stats-result [onerror]').length,0);
   assert.match(d.querySelector('.channel-private').textContent,/autorização adicional/);
   submit();await delay(30);

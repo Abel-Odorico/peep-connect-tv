@@ -112,8 +112,8 @@ def request(path):
         return json.load(response)
 
 
-def check_files(apk):
-    if not apk.is_file():
+def check_files(apk, require_apk=True):
+    if require_apk and not apk.is_file():
         raise RuntimeError('APK não encontrado: ' + str(apk))
     def expired(*_):
         raise TimeoutError('Os arquivos do projeto ainda não estão disponíveis localmente. No Finder, selecione Manter Baixado na pasta konka-glass e tente novamente.')
@@ -140,7 +140,7 @@ def ensure_service(device):
             raise RuntimeError('A porta 8770 pertence a outro serviço. Feche-o antes de continuar.')
         try:
             status = request('/api/youtube/status')
-            if status.get('channelStatsVersion') == 1 and status.get('deviceFlowVersion') == 2 and 'apiConfigured' in status and health.get('tvDevice') == device and health.get('catalogVersion') == 2 and health.get('ambientVersion') == 1 and health.get('performanceVersion') == 1:
+            if status.get('channelStatsVersion') == 2 and status.get('deviceFlowVersion') == 2 and 'apiConfigured' in status and health.get('tvDevice') == device and health.get('catalogVersion') == 2 and health.get('ambientVersion') == 1 and health.get('performanceVersion') == 1:
                 return
         except (OSError, ValueError):
             pass
@@ -149,7 +149,10 @@ def ensure_service(device):
         if len(pids) != 1 or not pids[0].isdigit():
             raise RuntimeError('Encerre a instância antiga de server.py com Ctrl+C no Terminal e tente novamente.')
         pid = int(pids[0])
-        args = command(['/bin/ps', '-p', str(pid), '-o', 'args='])
+        try:
+            args = command(['/bin/ps', '-p', str(pid), '-o', 'args='])
+        except PermissionError as error:
+            raise RuntimeError('Este ambiente não pode confirmar a origem do serviço no macOS. Execute a atualização no Terminal do próprio Mac; o serviço antigo foi preservado.') from error
         if str(ROOT / 'server.py') not in args:
             raise RuntimeError('Não confirmei a origem do servidor antigo. Encerre-o com Ctrl+C no Terminal e tente novamente.')
         print('Atualizando o serviço deste projeto no Mac…', flush=True)
@@ -191,12 +194,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--device', help='Endereço atual da depuração Wi-Fi; sem esta opção, tenta descoberta automática.')
     parser.add_argument('--apk', type=Path, default=ROOT.parent / 'Peep-Connect-TV.apk')
+    parser.add_argument('--somente-servico', action='store_true', help='Atualiza o serviço e recarrega o painel na TV sem reinstalar o APK.')
     args = parser.parse_args()
     if args.device and not re.fullmatch(r'[A-Za-z0-9._:-]+', args.device):
         raise RuntimeError('Endereço ADB inválido.')
     adb = adb_executable()
     print('Conferindo os arquivos locais…', flush=True)
-    check_files(args.apk)
+    check_files(args.apk, require_apk=not args.somente_servico)
     print('Conectando à Konka por ADB…', flush=True)
     command([adb, 'start-server'])
     device = connect_tv(adb, args.device)
@@ -209,8 +213,12 @@ def main():
         raise RuntimeError('Este dispositivo não corresponde à Konka identificada nesta conversa. Instalação interrompida.')
     print('Aparelho confirmado: ' + model, flush=True)
     ensure_service(device)
-    print('Instalando Peep Connect — prévia conectada…', flush=True)
-    print(command([*prefix, 'install', '-r', args.apk], timeout=120), flush=True)
+    if args.somente_servico:
+        print('Recarregando Peep Connect sem reinstalar o aplicativo…', flush=True)
+        command([*prefix, 'shell', 'am', 'force-stop', PACKAGE])
+    else:
+        print('Instalando Peep Connect — prévia conectada…', flush=True)
+        print(command([*prefix, 'install', '-r', args.apk], timeout=120), flush=True)
     command([*prefix, 'reverse', 'tcp:8770', 'tcp:8770'])
     launch = command([*prefix, 'shell', 'am', 'start', '-W', '-n', PACKAGE + '/.MainActivity'])
     if 'Error:' in launch or 'Exception' in launch:
@@ -225,7 +233,7 @@ def main():
     if shot.returncode == 0 and shot.stdout.startswith(b'\x89PNG\r\n\x1a\n'):
         (output / 'peep-connect-na-tv.png').write_bytes(shot.stdout)
         print('Captura da TV salva em outputs/peep-connect-na-tv.png', flush=True)
-    print('APK instalado e processo aberto. Confira a imagem na TV. O Mac e a conexão ADB precisam continuar ativos; esta prévia não substitui a tela inicial padrão.', flush=True)
+    print(('Painel atualizado' if args.somente_servico else 'APK instalado')+' e processo aberto. Confira a imagem na TV. O Mac e a conexão ADB precisam continuar ativos; esta prévia não substitui a tela inicial padrão.', flush=True)
 
 
 if __name__ == '__main__':

@@ -255,7 +255,7 @@ class YouTube:
         entries = [{'id': cid, 'title': info.get('title', 'Canal do YouTube'), 'image': info.get('image', '')} for cid, info in data['accounts'].items() if info.get('tokens')]
         active = data['active']
         current = data['accounts'].get(active, {})
-        return {'configured': configured, 'deviceConfigured': device_configured, 'deviceFlowVersion': 2, 'channelStatsVersion': 1, 'apiConfigured': bool(self.api_key()), 'connected': connected, 'account': (self.feed_cache.get('account') if self.feed_cache else current.get('title')) if connected else None, 'accounts': entries, 'active': active if connected else ''}
+        return {'configured': configured, 'deviceConfigured': device_configured, 'deviceFlowVersion': 2, 'channelStatsVersion': 2, 'apiConfigured': bool(self.api_key()), 'connected': connected, 'account': (self.feed_cache.get('account') if self.feed_cache else current.get('title')) if connected else None, 'accounts': entries, 'active': active if connected else ''}
 
     def public_feed(self):
         with self.lock:
@@ -335,7 +335,7 @@ class YouTube:
                     uploads = public('playlistItems', part='contentDetails', playlistId=playlist, maxResults=8)
                     ids = [item.get('contentDetails', {}).get('videoId', '') for item in uploads.get('items', [])]
                     ids = [vid for vid in ids if re.fullmatch(r'[A-Za-z0-9_-]{11}', vid)]
-                    result = public('videos', part='snippet,statistics', id=','.join(ids)) if ids else {}
+                    result = public('videos', part='snippet,statistics,contentDetails', id=','.join(ids)) if ids else {}
                     by_id = {item['id']: item for item in result.get('items', []) if item.get('id') in ids}
                     for vid in ids:
                         if vid not in by_id:
@@ -343,10 +343,12 @@ class YouTube:
                         item = by_id[vid]
                         vs, sn = item.get('statistics', {}), item.get('snippet', {})
                         videos.append({'id': vid, 'title': sn.get('title', 'Vídeo'), 'published': sn.get('publishedAt'),
+                            'duration': item.get('contentDetails', {}).get('duration'),
                             'views': count(vs, 'viewCount'), 'likes': count(vs, 'likeCount'), 'comments': count(vs, 'commentCount')})
-                except YouTubeError:
+                except (YouTubeError, KeyError, TypeError, ValueError):
                     partial = True
             data = {'id': cid, 'title': snippet.get('title', 'Canal'), 'handle': snippet.get('customUrl', ''),
+                'createdAt': snippet.get('publishedAt'), 'description': snippet.get('description', ''),
                 'subscribers': None if stats.get('hiddenSubscriberCount') else count(stats, 'subscriberCount'),
                 'subscribersHidden': bool(stats.get('hiddenSubscriberCount')), 'views': count(stats, 'viewCount'),
                 'videoCount': count(stats, 'videoCount'), 'videos': videos, 'partial': partial,

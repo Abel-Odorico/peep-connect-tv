@@ -16,10 +16,10 @@ class ChannelStatsTests(unittest.TestCase):
     def request(self, url):
         self.calls.append(url)
         if '/channels?' in url:
-            return {'items': [{'id': CID, 'snippet': {'title': 'Test', 'customUrl': '@test'}, 'statistics': {'viewCount': '1000', 'subscriberCount': '500', 'videoCount': '2'}, 'contentDetails': {'relatedPlaylists': {'uploads': 'uploads'}}}]}
+            return {'items': [{'id': CID, 'snippet': {'title': 'Test', 'customUrl': '@test', 'publishedAt': '2021-03-04T00:00:00Z', 'description': 'Sobre o canal'}, 'statistics': {'viewCount': '1000', 'subscriberCount': '500', 'videoCount': '2'}, 'contentDetails': {'relatedPlaylists': {'uploads': 'uploads'}}}]}
         if '/playlistItems?' in url:
             return {'items': [{'contentDetails': {'videoId': 'abcdefghijk'}}]}
-        return {'items': [{'id': 'abcdefghijk', 'snippet': {'title': 'Video'}, 'statistics': {'viewCount': '0', 'commentCount': '2'}}]}
+        return {'items': [{'id': 'abcdefghijk', 'snippet': {'title': 'Video'}, 'contentDetails': {'duration': 'PT12M30S'}, 'statistics': {'viewCount': '0', 'commentCount': '2'}}]}
 
     def test_selectors_and_external_urls(self):
         self.assertEqual(self.yt.channel_selector('https://www.youtube.com/@teste/videos'), {'forHandle': '@teste'})
@@ -35,11 +35,15 @@ class ChannelStatsTests(unittest.TestCase):
             self.assertEqual(data['subscribers'], 500)
             self.assertEqual(data['videos'][0]['views'], 0)
             self.assertIsNone(data['videos'][0]['likes'])
+            self.assertEqual(data['videos'][0]['duration'], 'PT12M30S')
+            self.assertEqual(data['createdAt'], '2021-03-04T00:00:00Z')
+            self.assertEqual(data['description'], 'Sobre o canal')
             self.assertFalse(data['analyticsAvailable'])
             self.assertNotIn('private-key', str(data))
             self.assertTrue(self.yt.channel_stats('@test')['cached'])
             self.assertEqual(len(self.calls), 3)
             self.assertEqual(parse_qs(urlsplit(self.calls[0]).query)['forHandle'], ['@test'])
+            self.assertIn('contentDetails', parse_qs(urlsplit(self.calls[2]).query)['part'][0])
 
     def test_hidden_subscribers_and_partial_videos(self):
         def request(url):

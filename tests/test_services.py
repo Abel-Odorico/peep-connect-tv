@@ -24,7 +24,7 @@ class YouTubeTests(unittest.TestCase):
 
     def test_missing_configuration_is_explicit(self):
         (self.yt.private / 'google-client.json').unlink()
-        self.assertEqual(self.yt.status(), {'configured': False, 'deviceConfigured': False, 'deviceFlowVersion': 2, 'channelStatsVersion': 1, 'apiConfigured': False, 'connected': False, 'account': None, 'accounts': [], 'active': ''})
+        self.assertEqual(self.yt.status(), {'configured': False, 'deviceConfigured': False, 'deviceFlowVersion': 2, 'channelStatsVersion': 2, 'apiConfigured': False, 'connected': False, 'account': None, 'accounts': [], 'active': ''})
         with self.assertRaises(YouTubeError):
             self.yt.begin(8770)
 

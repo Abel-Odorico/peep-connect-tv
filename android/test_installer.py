@@ -32,6 +32,28 @@ class InstallerSafetyTests(unittest.TestCase):
             service.assert_not_called()
         self.assertFalse(any('install' in args for args in calls))
 
+    def test_service_only_refresh_skips_apk_and_reopens_app(self):
+        calls = []
+        def run(args, **kwargs):
+            values = [str(x) for x in args]
+            calls.append(values)
+            if values[-1] == 'get-state':
+                return 'device'
+            if values[-1] == 'ro.product.model':
+                return 'KONKA 4K Android TV-A'
+            if values[-1] == 'ro.board.platform':
+                return 'rtd2851a'
+            if 'pidof' in values:
+                return '1234'
+            return ''
+        with patch.object(installer, 'adb_executable', return_value=Path('/example/adb')), patch.object(sys, 'argv', ['instalar_tv.py', '--somente-servico']), patch.object(installer, 'check_files') as files, patch.object(installer, 'connect_tv', return_value='192.0.2.10:33581'), patch.object(installer, 'command', side_effect=run), patch.object(installer, 'ensure_service') as service, patch.object(installer.time, 'sleep'), patch.object(installer.subprocess, 'run') as screenshot:
+            screenshot.return_value.returncode = 1
+            installer.main()
+            files.assert_called_once_with(installer.ROOT.parent / 'Peep-Connect-TV.apk', require_apk=False)
+            service.assert_called_once_with('192.0.2.10:33581')
+        self.assertTrue(any('force-stop' in args for args in calls))
+        self.assertFalse(any('install' in args for args in calls))
+
     def test_other_server_is_not_stopped(self):
         responses = [{'service': 'Konka Glass'}, OSError('old API')]
         with patch.object(installer, 'request', side_effect=responses), patch.object(installer, 'command', side_effect=['456', 'python3 /other/project/server.py']), patch.object(installer.os, 'kill') as kill, patch.object(installer.subprocess, 'Popen') as start:
@@ -40,8 +62,19 @@ class InstallerSafetyTests(unittest.TestCase):
             kill.assert_not_called()
             start.assert_not_called()
 
+    def test_process_inspection_denied_preserves_running_server(self):
+        responses = [{'service': 'Konka Glass'}, OSError('old API')]
+        def command(args, **kwargs):
+            if 'lsof' in args[0]:
+                return '456'
+            raise PermissionError('ps blocked')
+        with patch.object(installer, 'request', side_effect=responses), patch.object(installer, 'command', side_effect=command), patch.object(installer.os, 'kill') as kill:
+            with self.assertRaisesRegex(RuntimeError, 'serviço antigo foi preservado'):
+                installer.ensure_service('192.0.2.10:33581')
+            kill.assert_not_called()
+
     def test_current_service_is_reused_without_restart(self):
-        with patch.object(installer, 'request', side_effect=[{'service': 'Konka Glass', 'tvDevice': '192.0.2.10:33581', 'catalogVersion': 2, 'ambientVersion': 1, 'performanceVersion': 1}, {'apiConfigured': True, 'deviceFlowVersion': 2, 'channelStatsVersion': 1}]), patch.object(installer, 'command') as command, patch.object(installer.subprocess, 'Popen') as start:
+        with patch.object(installer, 'request', side_effect=[{'service': 'Konka Glass', 'tvDevice': '192.0.2.10:33581', 'catalogVersion': 2, 'ambientVersion': 1, 'performanceVersion': 1}, {'apiConfigured': True, 'deviceFlowVersion': 2, 'channelStatsVersion': 2}]), patch.object(installer, 'command') as command, patch.object(installer.subprocess, 'Popen') as start:
             installer.ensure_service('192.0.2.10:33581')
             command.assert_not_called()
             start.assert_not_called()
