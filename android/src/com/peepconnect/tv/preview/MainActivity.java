@@ -8,7 +8,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
+import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
+import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
@@ -21,7 +23,11 @@ import android.widget.Toast;
 
 public final class MainActivity extends Activity {
     private static final String START = "http://127.0.0.1:8770/";
+    // Dashboard Painel do GestorPeep: abre primeiro, sempre que o app abre. Voltar leva à skin.
+    private static final String PAINEL = "https://gestorpeep.com/painel_tv.php";
     private WebView web;
+    private WebView painel;          // WebView separado, SEM a ponte PeepTV: página remota não comanda a TV
+    private boolean skinCarregada;
     // Peep Horizons Bluetooth 0.13
     private BluetoothStatus peepBluetooth;
     private DeviceMetrics peepMetrics;
@@ -89,9 +95,53 @@ public final class MainActivity extends Activity {
                 if (request.isForMainFrame()) showConnectionHelp();
             }
         });
-        setContentView(web);
-        web.requestFocus();
-        web.loadUrl(START);
+        abrirPainel();
+    }
+
+    /** Painel do GestorPeep em tela cheia. Só navega dentro de gestorpeep.com/painel_tv.php. */
+    private void abrirPainel() {
+        painel = new WebView(this);
+        painel.setBackgroundColor(Color.rgb(12, 25, 44));
+        WebSettings s = painel.getSettings();
+        s.setJavaScriptEnabled(true);
+        s.setDomStorageEnabled(true);           // guarda o pareamento da TV (localStorage)
+        s.setUseWideViewPort(true);
+        s.setLoadWithOverviewMode(true);
+        s.setTextZoom(100);
+        s.setAllowFileAccess(false);
+        s.setAllowContentAccess(false);
+        s.setMediaPlaybackRequiresUserGesture(true);
+        s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+        s.setSupportMultipleWindows(false);
+        painel.setFocusable(true);
+        painel.setFocusableInTouchMode(true);
+        painel.setWebChromeClient(new WebChromeClient()); // confirm() de "Desconectar esta TV"
+        painel.setWebViewClient(new WebViewClient() {
+            @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                Uri uri = request.getUrl();
+                return !("https".equals(uri.getScheme()) && "gestorpeep.com".equals(uri.getHost())
+                        && uri.getPath() != null && uri.getPath().startsWith("/painel_tv.php"));
+            }
+            @Override public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                if (request.isForMainFrame()) { message("Painel indisponível agora (sem internet?). Abrindo a Peep Connect."); abrirSkin(); }
+            }
+        });
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        setContentView(painel);
+        painel.requestFocus();
+        painel.loadUrl(PAINEL);
+    }
+
+    /** Sai do painel para a skin; a skin só carrega na primeira vez que é aberta. */
+    private void abrirSkin() {
+        runOnUiThread(() -> {
+            if (isFinishing()) return;
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            if (painel != null) { WebView p = painel; painel = null; p.stopLoading(); p.onPause(); p.destroy(); }
+            setContentView(web);
+            web.requestFocus();
+            if (!skinCarregada) { skinCarregada = true; web.loadUrl(START); }
+        });
     }
 
     private static boolean local(Uri uri) {
@@ -115,7 +165,7 @@ public final class MainActivity extends Activity {
         detail.setTextColor(Color.rgb(215, 223, 230)); detail.setTextSize(20); detail.setPadding(0, 24, 0, 30);
         box.addView(detail);
         Button retry = new Button(this); retry.setText("Tentar novamente");
-        retry.setOnClickListener(v -> { setContentView(web); web.requestFocus(); web.loadUrl(START); }); box.addView(retry);
+        retry.setOnClickListener(v -> { skinCarregada = true; setContentView(web); web.requestFocus(); web.loadUrl(START); }); box.addView(retry);
         Button exit = new Button(this); exit.setText("Voltar à TV"); exit.setOnClickListener(v -> finish()); box.addView(exit);
         setContentView(box); retry.requestFocus();
     }
@@ -195,9 +245,10 @@ public final class MainActivity extends Activity {
     }
 
     @Override public void onBackPressed() {
+        if (painel != null) { abrirSkin(); return; }
         web.evaluateJavascript("(function(){if(window.PeepIdle&&PeepIdle.active){PeepIdle.wake();return}var p=document.querySelector('dialog[open]');if(p){p.close();return}if(typeof page!=='undefined'&&page!=='home'){navigate('home');return}PeepTV.close()})()", null);
     }
-    @Override protected void onPause() { web.onPause(); web.pauseTimers(); super.onPause(); }
-    @Override protected void onResume() { super.onResume(); if (web != null) { web.onResume(); web.resumeTimers(); web.evaluateJavascript("window.dispatchEvent(new Event('peep-apps-refresh'))", null); } }
-    @Override protected void onDestroy() { if (peepBluetooth != null) peepBluetooth.close(); if (web != null) { web.stopLoading(); web.removeJavascriptInterface("PeepTV"); web.destroy(); } super.onDestroy(); }
+    @Override protected void onPause() { if (painel != null) painel.onPause(); web.onPause(); web.pauseTimers(); super.onPause(); }
+    @Override protected void onResume() { super.onResume(); if (painel != null) painel.onResume(); if (web != null) { web.onResume(); web.resumeTimers(); if (skinCarregada) web.evaluateJavascript("window.dispatchEvent(new Event('peep-apps-refresh'))", null); } }
+    @Override protected void onDestroy() { if (painel != null) { painel.stopLoading(); painel.destroy(); } if (peepBluetooth != null) peepBluetooth.close(); if (web != null) { web.stopLoading(); web.removeJavascriptInterface("PeepTV"); web.destroy(); } super.onDestroy(); }
 }
