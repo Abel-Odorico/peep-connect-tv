@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width,initial-scale=1">
+ <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'">
+ <meta name="theme-color" content="#06152b">
+ <title>Peep Connect TV · Prévia da guia Canal</title>
+ <link rel="stylesheet" href="demo.css">
+ <link rel="stylesheet" href="../dist/channel-stats.css">
+ <script src="demo.js" defer></script>
+ <script src="../dist/channel-stats.js" defer></script>
+</head>
+<body class="channel-view">
+ <div class="demo-backdrop" aria-hidden="true"></div>
+ <div class="demo-banner" role="status"><strong>PRÉVIA INTERATIVA</strong><span>Dados fictícios para mostrar o visual · sua conta Google não é acessada aqui</span></div>
+ <div class="demo-shell">
+  <header class="demo-header">
+   <a class="demo-brand" href="../dist/" aria-label="Peep Connect TV, projeto"><img src="../dist/assets/peep-connect-light.png" alt="Peep Connect"></a>
+   <nav aria-label="Seções da demonstração"><span class="demo-nav-placeholder" aria-hidden="true">⌂</span><span class="demo-nav-placeholder" aria-hidden="true">▦</span><span class="demo-nav-placeholder" aria-hidden="true">◈</span><span class="demo-nav-placeholder" aria-hidden="true">◴</span><button id="themes" class="nav" type="button" aria-label="Alternar tema da prévia" title="Alternar tema">◉</button></nav>
+   <button id="demo-theme" class="demo-theme" type="button" aria-label="Alternar entre tema claro e escuro">◐ <span>Claro / escuro</span></button>
+  </header>
+  <main id="main"></main>
+  <footer class="demo-footer">Prévia de interface · as métricas na TV dependem do canal conectado.</footer>
+ </div>
+</body>
+</html>

@@ -1,0 +1,21 @@
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;min-height:100vh;background:#06111f;color:#f7f7ff;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,select,input{cursor:pointer}button:disabled{opacity:.65;cursor:wait}
+.demo-backdrop{position:fixed;inset:0;background:linear-gradient(90deg,#031023cf,#03102399 60%,#03102365),url('../dist/assets/collections/obsidiana.png') center/cover no-repeat;z-index:-1}
+.demo-banner{min-height:42px;display:flex;justify-content:center;align-items:center;gap:15px;padding:8px 22px;background:#eec782;color:#152131;text-align:center;font-size:12px;line-height:1.4}
+.demo-banner strong{font-size:10px;letter-spacing:.16em;white-space:nowrap}
+.demo-shell{width:min(100% - 7%,1800px);margin:auto}.demo-header{display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:126px}
+.demo-brand img{display:block;width:clamp(150px,17vw,310px);max-height:82px;object-fit:contain;object-position:left}
+.demo-header nav{display:flex;align-items:center;gap:6px;border:1px solid #9ddbe047;border-radius:19px;background:#09273cbd;padding:6px}
+.demo-nav-placeholder,.demo-header .nav{width:57px;height:55px;border:0;border-radius:14px;background:transparent;color:#cbdfe6;display:grid;place-items:center;font-size:26px;line-height:1}
+.demo-header .nav[data-page="channel"]{background:#84dce025;color:#f1feff;outline:1px solid #8adfe29b}
+.demo-header .nav svg{width:28px;height:28px}.demo-header .nav-label{display:none}
+.demo-theme{padding:11px 15px;background:#0c2a3dbb;border:1px solid #ffffff3d;border-radius:14px;color:inherit;font-size:14px;white-space:nowrap}
+.demo-theme:hover{background:#2b5773}.demo-footer{margin:30px 0 38px;color:#b8c8d9;font-size:12px}
+body.horizon-light{color:#0b1f3b;background:#f5f4f1}body.horizon-light .demo-backdrop{background:linear-gradient(90deg,#f6f3e7e6,#f6f3e7c4),url('../dist/assets/collections/solsticio.png') center/cover no-repeat}
+body.horizon-light .demo-header nav{background:#f9f8f2d9;border-color:#33495b5e}body.horizon-light .demo-nav-placeholder,body.horizon-light .demo-header .nav{color:#16384b}body.horizon-light .demo-theme{background:#f9f8f2;border-color:#33495b5e;color:#16384b}body.horizon-light .demo-footer{color:#445666}
+.channel-dashboard{margin-top:20px!important}.channel-video-row img{display:none}.channel-video-row:before{content:'▶';width:108px;aspect-ratio:16/9;flex-shrink:0;display:grid;place-items:center;border-radius:8px;background:linear-gradient(135deg,#183958,#5163a2 52%,#d27a7e);font-size:21px;color:white}
+.channel-video-row:nth-child(even):before{background:linear-gradient(135deg,#213651,#14778c,#a26a92)}
+.channel-dashboard .channel-avatar{background:linear-gradient(135deg,#b96c49,#5a376c)}
+.channel-public-search{scroll-margin-top:24px}
+@media(max-width:920px){.demo-header{min-height:102px}.demo-shell{width:min(100% - 36px,1800px)}.demo-brand img{width:160px}.demo-theme span{display:none}.demo-header nav{gap:0}.demo-nav-placeholder,.demo-header .nav{width:44px;height:42px;font-size:21px}.demo-header .nav svg{width:23px;height:23px}}
+@media(max-width:600px){.demo-banner{display:block;text-align:left}.demo-banner strong{display:block}.demo-shell{width:calc(100% - 30px)}.demo-header{flex-wrap:wrap;gap:10px;padding-top:12px;padding-bottom:8px}.demo-header nav{order:3;width:100%;justify-content:space-between}.demo-brand img{width:155px}.channel-video-row:before{width:75px}.channel-dashboard{margin-top:8px!important}.channel-hero h1{font-size:32px}}
