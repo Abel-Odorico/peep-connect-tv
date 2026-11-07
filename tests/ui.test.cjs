@@ -51,6 +51,28 @@ test('TV library lists all launchable apps with their native icons',async()=>{
   assert.deepEqual(errors,[]);
  }finally{w.close()}
 });
+test('channel has its own tab, reads the connected channel and charts only observed samples',async()=>{
+ const {dom,w,d,errors}=await open();
+ try{
+  const id='UC'+'a'.repeat(22);let revision=0;
+  w.fetch=async input=>{
+   const pathname=new URL(input,'http://127.0.0.1:8770').pathname;
+   const data=pathname==='/api/youtube/status'?{connected:true,active:id,accounts:[{id,title:'Além do Alcance',image:''}]}:
+    pathname==='/api/youtube/channel'?{id,title:'Além do Alcance',handle:'@alemdoalcance',at:1700000000+revision*900,source:'YouTube Data API v3',views:1000+revision*50,subscribers:100+revision*3,videoCount:2,videos:[{id:'abcdefghijk',title:'Vídeo',views:200,likes:20,comments:2,published:'2026-10-10T12:00:00Z'}]}:{};
+   return new Response(JSON.stringify(data),{headers:{'Content-Type':'application/json'}});
+  };
+  assert.equal(d.querySelector('#youtube-section #channel-stats-form'),null);
+  d.querySelector('[data-page=channel]').click();await delay(90);
+  assert.equal(d.querySelector('#channel-title').textContent,'Além do Alcance');
+  assert.equal(d.querySelector('#channel-views').textContent,'1.000');
+  assert.equal(d.querySelector('#channel-history-count').textContent,'1 amostra');
+  assert.equal(d.querySelector('#channel-stats-form').closest('details').open,false);
+  revision=1;d.querySelector('#channel-refresh').click();await delay(60);
+  assert.equal(d.querySelector('#channel-history-count').textContent,'2 amostras');
+  assert.match(d.querySelector('#channel-history-note').textContent,/\+50 visualizações/);
+  assert.deepEqual(errors,[]);
+ }finally{w.close()}
+});
 test('theme keyboard activates exactly one tab without global spatial navigation',async()=>{
  const {dom,w,d,errors}=await open();try{
   w.PeepStudio.themes('style');assert.equal(d.querySelectorAll('[role=tab]').length,5);
@@ -279,7 +301,7 @@ test('Device QR uses Google response, displays original code and cancels on clos
  }finally{dom.window.close()}
 });
 
-test('channel statistics are manual, public and preserve previous results on errors',async()=>{
+test('optional public channel search escapes titles and preserves results on errors',async()=>{
  const {dom,w,d,errors}=await open();try{
   let calls=0;
   w.fetch=async input=>{if(!String(input).includes('/api/youtube/channel'))return new Response('{}');calls++;
@@ -287,17 +309,18 @@ test('channel statistics are manual, public and preserve previous results on err
    return new Response(JSON.stringify({id:'UC'+'a'.repeat(22),title:'<img src=x onerror=alert(1)>',handle:'@test',subscribers:null,subscribersHidden:true,views:100,videoCount:1,at:Date.now()/1000,source:'YouTube Data API v3',videos:[{id:'abcdefghijk',title:'Test video',views:0,likes:null,comments:2}]}));
   };
   assert.equal(calls,0);
+  d.querySelector('[data-page=channel]').click();await delay(20);
   d.querySelector('#channel-input').value='@test';
   const submit=()=>d.querySelector('#channel-stats-form').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
   submit();submit();await delay(30);
   assert.equal(calls,1);assert.equal(d.querySelectorAll('.channel-kpis article').length,3);
-  assert.match(d.querySelector('#channel-stats-result').textContent,/Oculto pelo canal/);
+  assert.equal(d.querySelector('#channel-subs').textContent,'Ocultos');
   assert.equal(d.querySelectorAll('#channel-stats-result [onerror]').length,0);
-  assert.match(d.querySelector('.channel-private').textContent,/não são dados públicos/);
+  assert.match(d.querySelector('.channel-private').textContent,/autorização adicional/);
   submit();await delay(30);
-  assert.match(d.querySelector('#channel-stats-status').textContent,/Mantendo os dados anteriores/);
+  assert.match(d.querySelector('#channel-stats-status').textContent,/Mantendo os últimos dados visíveis/);
   assert.equal(d.querySelectorAll('.channel-kpis article').length,3);
-  assert.equal(d.querySelector('#channel-stats-form button').disabled,false);
+  assert.equal(d.querySelector('#channel-refresh').disabled,false);
   assert.deepEqual(errors,[]);
  }finally{dom.window.close()}
 });
