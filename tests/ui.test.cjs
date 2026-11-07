@@ -46,6 +46,7 @@ test('TV library lists all launchable apps with their native icons',async()=>{
   d.querySelector('[data-page=apps]').click();
   assert.equal(d.querySelectorAll('#apps .app-card').length,2);
   assert.equal(d.querySelectorAll('#apps .native-app-icon').length,2);
+  assert.equal(d.querySelectorAll('#apps .has-native-icon').length,2);
   assert.equal(d.querySelector('[data-id="example.tv.player"] .card-name').textContent,'Player de exemplo');
   assert.deepEqual(errors,[]);
  }finally{w.close()}

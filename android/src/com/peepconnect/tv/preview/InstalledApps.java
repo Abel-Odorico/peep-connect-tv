@@ -41,9 +41,9 @@ final class InstalledApps {
                 app.put("name", label == null ? entry.getKey() : label.toString());
                 Drawable icon = info.loadIcon(pm);
                 if (icon != null) {
-                    Bitmap bitmap = Bitmap.createBitmap(80, 80, Bitmap.Config.ARGB_8888);
+                    Bitmap bitmap = Bitmap.createBitmap(192, 192, Bitmap.Config.ARGB_8888);
                     Canvas canvas = new Canvas(bitmap);
-                    icon.setBounds(0, 0, 80, 80);
+                    icon.setBounds(0, 0, 192, 192);
                     icon.draw(canvas);
                     ByteArrayOutputStream out = new ByteArrayOutputStream();
                     bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);

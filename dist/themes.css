@@ -14,3 +14,5 @@ body[data-theme=adl-day] .app-context-heading .eyebrow{color:#0a4d5c}
 body[data-theme=adl-day] .app-context-credit{opacity:1}
 body[data-theme=adl-day] :is(.app-card:focus-visible,.app-card:hover){background:#0b1f3b;color:#faf8f5}
 body[data-theme=adl-day] .panel-button{background:#0a4d5c;color:#faf8f5}
+body[data-theme=adl-day] .weather-card :is(small,#weather-condition){color:#0b1f3b}
+body[data-theme=adl-day] .weather-card svg{color:#0a4d5c}
