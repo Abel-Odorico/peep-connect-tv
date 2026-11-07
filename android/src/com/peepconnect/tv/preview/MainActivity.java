@@ -45,11 +45,17 @@ public final class MainActivity extends Activity {
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        // Diagnostic opt-in for this launch only; ordinary launches keep it off.
+        WebView.setWebContentsDebuggingEnabled(getIntent().getBooleanExtra("peep_debug", false));
+        abrirPainel();
+    }
+
+    // A skin e seus sensores só são necessários depois de sair do painel.
+    private void prepararSkin() {
+        if (web != null) return;
         peepBluetooth = new BluetoothStatus(this);
         peepMetrics = new DeviceMetrics(this);
         web = new WebView(this);
-        // Diagnostic opt-in for this launch only; ordinary launches keep it off.
-        WebView.setWebContentsDebuggingEnabled(getIntent().getBooleanExtra("peep_debug", false));
         peepBluetooth.start();
         web.setBackgroundColor(Color.BLACK);
         WebSettings settings = web.getSettings();
@@ -95,7 +101,6 @@ public final class MainActivity extends Activity {
                 if (request.isForMainFrame()) showConnectionHelp();
             }
         });
-        abrirPainel();
     }
 
     /** Painel do GestorPeep em tela cheia. Só navega dentro de gestorpeep.com/painel_tv.php. */
@@ -138,6 +143,7 @@ public final class MainActivity extends Activity {
             if (isFinishing()) return;
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             if (painel != null) { WebView p = painel; painel = null; p.stopLoading(); p.onPause(); p.destroy(); }
+            prepararSkin();
             setContentView(web);
             web.requestFocus();
             if (!skinCarregada) { skinCarregada = true; web.loadUrl(START); }
@@ -248,7 +254,7 @@ public final class MainActivity extends Activity {
         if (painel != null) { abrirSkin(); return; }
         web.evaluateJavascript("(function(){if(window.PeepIdle&&PeepIdle.active){PeepIdle.wake();return}var p=document.querySelector('dialog[open]');if(p){p.close();return}if(typeof page!=='undefined'&&page!=='home'){navigate('home');return}PeepTV.close()})()", null);
     }
-    @Override protected void onPause() { if (painel != null) painel.onPause(); web.onPause(); web.pauseTimers(); super.onPause(); }
+    @Override protected void onPause() { if (painel != null) painel.onPause(); if (web != null) { web.onPause(); web.pauseTimers(); } super.onPause(); }
     @Override protected void onResume() { super.onResume(); if (painel != null) painel.onResume(); if (web != null) { web.onResume(); web.resumeTimers(); if (skinCarregada) web.evaluateJavascript("window.dispatchEvent(new Event('peep-apps-refresh'))", null); } }
     @Override protected void onDestroy() { if (painel != null) { painel.stopLoading(); painel.destroy(); } if (peepBluetooth != null) peepBluetooth.close(); if (web != null) { web.stopLoading(); web.removeJavascriptInterface("PeepTV"); web.destroy(); } super.onDestroy(); }
 }
