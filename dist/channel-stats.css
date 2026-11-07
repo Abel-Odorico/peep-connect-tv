@@ -47,3 +47,25 @@ body.channel-view .landscape:after{background:#071323d0}body.channel-view[data-t
 @media(max-width:860px){.channel-insights{grid-template-columns:1fr}.channel-hero{align-items:start}.channel-hero h1{font-size:30px}.channel-video-list{grid-template-columns:1fr}}
 @media(max-width:580px){.channel-dashboard{gap:14px}.channel-hero{display:block}.channel-actions{margin-top:16px}.channel-identity{padding:13px;gap:10px}.channel-identity select{max-width:125px;min-width:0}.channel-kpis{gap:7px}.channel-kpi{padding:13px 11px;min-height:115px;border-radius:15px}.channel-kpi span{font-size:10px}.channel-kpi strong{font-size:21px}.channel-kpi small{font-size:8px}.channel-history,.channel-ranking{padding:16px}.channel-video-row img{width:84px}}
 html.tv-mode .channel-dashboard{gap:14px;margin:12px 0 26px}html.tv-mode .channel-hero{padding-bottom:13px}html.tv-mode .channel-hero h1{font-size:29px}html.tv-mode .channel-hero p:not(.eyebrow){font-size:11px}html.tv-mode .channel-identity{padding:11px 14px}html.tv-mode .channel-avatar{width:46px;height:46px}html.tv-mode .channel-identity h2{font-size:19px}html.tv-mode .channel-kpi{min-height:111px;padding:13px 17px}html.tv-mode .channel-kpi strong{font-size:28px}html.tv-mode .channel-history svg{height:100px;margin-top:12px}html.tv-mode .channel-history,html.tv-mode .channel-ranking{padding:14px 18px}html.tv-mode .channel-card-head h3{font-size:15px}html.tv-mode #channel-ranking-list{margin-top:12px;gap:9px}
+
+/* Use the palette supplied by the active TV theme. */
+body .channel-dashboard {
+  --channel-ink: var(--h-ink, #faf8f5);
+  --channel-muted: var(--h-muted, #c2ccd7);
+  --channel-surface: var(--h-surface, #132032);
+  --channel-soft: var(--h-base, #101a29);
+  --channel-accent: var(--accent, #80e0e5);
+  --channel-border: color-mix(in srgb, var(--channel-ink) 24%, transparent);
+}
+body.horizon-light .channel-dashboard {
+  --channel-ink: var(--h-ink, #0b1f3b);
+  --channel-muted: var(--h-muted, #3f5263);
+  --channel-surface: var(--h-surface, #faf8f5);
+  --channel-soft: var(--h-base, #e5e9e8);
+  --channel-accent: var(--h-ink, #0a4d5c);
+}
+.channel-dashboard #channel-trend-fill stop { stop-color:var(--channel-accent) }
+.channel-dashboard .channel-rank i b { background:var(--channel-accent) }
+.channel-dashboard .channel-kpi:before { background:var(--channel-accent);filter:none;opacity:.06 }
+.channel-dashboard .channel-avatar { background:var(--channel-soft);color:var(--channel-accent) }
+.channel-dashboard .channel-kpi small { font-size:clamp(12px,1vw,18px);line-height:1.4 }

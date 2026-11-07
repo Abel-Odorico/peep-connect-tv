@@ -48,3 +48,27 @@ body.studio015[data-theme=adl-day]{--studio-panel:#faf8f5;--studio-muted:#465b6c
 body[data-theme=adl-day] dialog.theme-studio-dialog{background:#faf8f5;color:#0b1f3b;border-color:#0b1f3b40}
 body[data-theme=adl-day] .studio-theme{background:#f0ede7;border-color:#0b1f3b30}
 body[data-theme=adl-day] .studio-tabs{border-color:#0b1f3b30}
+
+#performance-dashboard .pro-consumption {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin:18px 0 6px;
+  padding-top:14px;
+  border-top:1px solid currentColor;
+  color:var(--h-ink,inherit);
+}
+.pro-consumption dt,.pro-coverage {font-size:clamp(12px,1vw,18px);color:var(--perf-muted)}
+.pro-consumption dd {margin:4px 0;font-size:clamp(16px,1.5vw,26px);font-variant-numeric:tabular-nums}
+#performance-dashboard #pro-down-line {stroke:var(--accent)}
+#performance-dashboard #pro-up-line {stroke:currentColor;stroke-dasharray:6 3}
+#performance-dashboard #pro-down-dot {fill:var(--accent)}
+#performance-dashboard #pro-up-dot {fill:currentColor}
+#performance-dashboard #pro-download-fill stop {stop-color:var(--accent)}
+#performance-dashboard #pro-upload-fill stop {stop-color:currentColor}
+#performance-dashboard .pro-rates>div:first-child>span>i {background:var(--accent)}
+#performance-dashboard .pro-rates>div:nth-child(2)>span>i {background:currentColor}
+#performance-dashboard :is(#perf-cpu-note,#perf-ram-note) {font-size:clamp(12px,1vw,18px);color:var(--perf-muted)}
+#performance-dashboard .perf-gauge:not(.perf-network-hero) {--metric-color:var(--accent)!important}
+#performance-dashboard .perf-progress {stroke:var(--metric-color)}
+body[data-theme=adl-day] #performance-dashboard {--perf-muted:#405367;--perf-card:#faf8f5}
