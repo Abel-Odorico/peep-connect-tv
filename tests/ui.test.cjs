@@ -41,17 +41,22 @@ test('TV library keeps launchable apps and prefers local publisher artwork',asyn
  const icon='data:image/png;base64,aGVsbG8=';
  const {dom,w,d,errors}=await open(null,[
   {package:'com.netflix.ninja',name:'Netflix',icon},
-  {package:'example.tv.player',name:'Player de exemplo',icon,banner:true}
+  {package:'example.tv.player',name:'Player de exemplo',icon,banner:true,ratio:1.778,fill:'#8c2222'},
+  {package:'example.tv.square',name:'Quadrado',icon,ratio:1,fill:'not-a-colour'},
+  {package:'example.tv.old',name:'APK antigo',icon,banner:true}
  ]);
  try{
   d.querySelector('[data-page=apps]').click();
-  assert.equal(d.querySelectorAll('#apps .app-card').length,2);
-  assert.equal(d.querySelectorAll('#apps .native-app-icon').length,1);
+  assert.equal(d.querySelectorAll('#apps .app-card').length,4);
+  assert.equal(d.querySelectorAll('#apps .native-app-icon').length,3);
   assert.equal(d.querySelectorAll('#apps .has-publisher-art').length,1);
   assert.ok(d.querySelector('[data-id=netflix] .app-artwork svg'));
   assert.equal(d.querySelector('[data-id=netflix]').getAttribute('aria-label'),'Abrir Netflix');
-  assert.equal(d.querySelectorAll('#apps .has-native-icon').length,1);
-  assert.equal(d.querySelectorAll('#apps .has-native-banner').length,1);
+  assert.equal(d.querySelectorAll('#apps .has-native-icon').length,3);
+  assert.equal(d.querySelectorAll('#apps .has-native-banner').length,2);
+  const banner=d.querySelector('[data-id="example.tv.player"]'),square=d.querySelector('[data-id="example.tv.square"]');
+  assert.equal(banner.dataset.artFit,'cover','A 16:9 banner fills the card slot');assert.equal(banner.style.getPropertyValue('--art-fill'),'#8c2222');assert.ok(banner.classList.contains('has-art-fill'));
+  assert.equal(square.dataset.artFit,'contain','Square art is never cropped');assert.equal(square.style.getPropertyValue('--art-fill'),'','Invalid colours from the bridge are ignored');assert.equal(square.classList.contains('has-art-fill'),false);
   assert.equal(d.querySelector('[data-id="example.tv.player"] .card-name').textContent,'Player de exemplo');
   assert.deepEqual(errors,[]);
  }finally{w.close()}
@@ -77,7 +82,9 @@ test('channel has its own tab, reads the connected channel and charts only obser
   assert.match(d.querySelector('#channel-video-list').textContent,/2:33/);
   assert.match(d.querySelector('#channel-created').textContent,/2023/);
   assert.equal(d.querySelector('#channel-stats-form').closest('details').open,false);
+  const urls=[];const baseFetch=w.fetch;w.fetch=async input=>{urls.push(String(input));return baseFetch(input)};
   revision=1;d.querySelector('#channel-refresh').click();await delay(60);
+  assert.ok(urls.some(u=>u.includes('/api/youtube/channel')&&u.includes('force=1')),'Manual refresh asks the service to bypass its cache');
   assert.equal(d.querySelector('#channel-history-count').textContent,'2 amostras');
   assert.match(d.querySelector('#channel-history-note').textContent,/\+50 visualizações/);
   assert.equal(d.querySelector('#channel-delta-views').textContent,'+50');
@@ -113,6 +120,22 @@ test('tiny real traffic and zero do not freeze Performance; Prisma gradients sta
   assert.equal(new Set(gradients).size,gradients.length);
   assert.deepEqual(errors,[]);
  }finally{dom.window.close()}
+});
+test('Internet dialog keeps signal, link and traffic as separate live readings',async()=>{
+ const {w,d,errors}=await open();try{
+  await delay(1300);w.PeepNetwork.open();
+  assert.equal(d.querySelector('#quality-rssi').textContent,'-50 dBm');
+  assert.equal(d.querySelector('#quality-link').textContent,'433 / 433 Mb/s');
+  assert.equal(d.querySelector('#quality-traffic').textContent,'↓ <0,1 · ↑ 0 Mb/s');
+  assert.match(d.querySelector('#quality-live').textContent,/não é velocidade/);
+  const next=fixture();next.at+=3;next.sampleId=2;next.network={...next.network,rssi:-61,rxLinkMbps:200,txLinkMbps:180,traffic:{downloadMbps:12.34,uploadMbps:3}};
+  w.PeepTV.deviceMetrics=()=>JSON.stringify(next);await w.PeepMetrics.refresh(true);
+  assert.equal(d.querySelector('#quality-rssi').textContent,'-61 dBm','An open dialog follows new samples');
+  assert.equal(d.querySelector('#quality-link').textContent,'200 / 180 Mb/s');
+  assert.equal(d.querySelector('#quality-traffic').textContent,'↓ 12 · ↑ 3 Mb/s');
+  assert.equal(d.querySelector('#quality-down').textContent,'—','Traffic never fills the tested speed');
+  assert.deepEqual(errors,[]);
+ }finally{w.close()}
 });
 test('Internet tests preserve device origin, convert bits, cancel and retain complete result',async()=>{
  const {dom,w,d,errors}=await open();try{

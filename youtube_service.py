@@ -14,6 +14,8 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 
 SCOPE = 'https://www.googleapis.com/auth/youtube.readonly'
+CHANNEL_CACHE_SECONDS = 900
+CHANNEL_FORCE_SECONDS = 30
 
 
 class YouTubeError(Exception):
@@ -255,7 +257,7 @@ class YouTube:
         entries = [{'id': cid, 'title': info.get('title', 'Canal do YouTube'), 'image': info.get('image', '')} for cid, info in data['accounts'].items() if info.get('tokens')]
         active = data['active']
         current = data['accounts'].get(active, {})
-        return {'configured': configured, 'deviceConfigured': device_configured, 'deviceFlowVersion': 2, 'channelStatsVersion': 2, 'apiConfigured': bool(self.api_key()), 'connected': connected, 'account': (self.feed_cache.get('account') if self.feed_cache else current.get('title')) if connected else None, 'accounts': entries, 'active': active if connected else ''}
+        return {'configured': configured, 'deviceConfigured': device_configured, 'deviceFlowVersion': 2, 'channelStatsVersion': 3, 'apiConfigured': bool(self.api_key()), 'connected': connected, 'account': (self.feed_cache.get('account') if self.feed_cache else current.get('title')) if connected else None, 'accounts': entries, 'active': active if connected else ''}
 
     def public_feed(self):
         with self.lock:
@@ -302,13 +304,16 @@ class YouTube:
             return {'forHandle': value}
         raise YouTubeError('Use @identificador, o ID UC… ou o link do canal; o nome exibido pode ser ambíguo.', 400)
 
-    def channel_stats(self, value):
+    def channel_stats(self, value, force=False):
         selector = self.channel_selector(value)
         cache_key = tuple(selector.items())
         with self.channel_lock:
             previous = self.channel_cache.get(cache_key)
-            if previous and time.time() - previous['at'] < 900:
-                return {**previous, 'cached': True}
+            age = time.time() - previous['at'] if previous else None
+            # Manual refresh bypasses the 15-minute cache, but not more than once
+            # per CHANNEL_FORCE_SECONDS, so repeated clicks cannot drain API quota.
+            if previous and age < CHANNEL_CACHE_SECONDS and not (force and age >= CHANNEL_FORCE_SECONDS):
+                return {**previous, 'cached': True, 'refreshLimited': bool(force)}
             key = self.api_key()
             if not key:
                 raise YouTubeError('Configure a chave do YouTube no serviço local. Esta consulta pública não exige login Google.', 503)
@@ -352,9 +357,9 @@ class YouTube:
                 'subscribers': None if stats.get('hiddenSubscriberCount') else count(stats, 'subscriberCount'),
                 'subscribersHidden': bool(stats.get('hiddenSubscriberCount')), 'views': count(stats, 'viewCount'),
                 'videoCount': count(stats, 'videoCount'), 'videos': videos, 'partial': partial,
-                'at': time.time(), 'cached': False, 'cacheSeconds': 900, 'source': 'YouTube Data API v3',
+                'at': time.time(), 'cached': False, 'cacheSeconds': CHANNEL_CACHE_SECONDS, 'forceSeconds': CHANNEL_FORCE_SECONDS, 'refreshLimited': False, 'source': 'YouTube Data API v3',
                 'analyticsAvailable': False}
-            if len(self.channel_cache) >= 16:
+            if cache_key not in self.channel_cache and len(self.channel_cache) >= 16:
                 self.channel_cache.pop(next(iter(self.channel_cache)))
             self.channel_cache[cache_key] = data
             return data
