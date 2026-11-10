@@ -22,6 +22,10 @@
  <div class="channel-recent-head"><div><p class="eyebrow">PUBLICAÇÕES</p><h3>Vídeos mais recentes</h3></div><span id="channel-source">Fonte: YouTube Data API v3</span></div><div id="channel-video-list" class="channel-video-list"></div></div>
  <details class="channel-public-search"><summary>Consultar outro canal público</summary><form id="channel-stats-form"><label for="channel-input">@identificador ou link do canal</label><div class="channel-search"><input id="channel-input" type="text" maxlength="250" placeholder="youtube.com/@seucanal" autocomplete="off" spellcheck="false" required><button type="submit">Consultar</button></div></form><p>Este acesso mostra apenas números públicos e não troca a conta Google conectada.</p></details>
  <aside class="channel-private"><strong>Sobre o alcance</strong><p>Espectadores únicos, impressões, CTR e dados de audiência exigem o YouTube Analytics e uma autorização adicional. Visualizações públicas não representam pessoas alcançadas. As tendências acima começam na primeira consulta feita neste dispositivo.</p></aside>`;
+ // Reading stops let the remote reach non-interactive statistics and the final note.
+ for(const node of section.querySelectorAll('.channel-kpi,.channel-observed,.channel-ranking,.channel-snapshot,.channel-private,#channel-bio-text')){
+  node.tabIndex=0;node.classList.add('channel-reading-stop');
+ }
  $('#main').append(section);
  const el=id=>section.querySelector('#'+id),esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const number=value=>value==null||!Number.isFinite(Number(value))?'—':Number(value).toLocaleString('pt-BR');

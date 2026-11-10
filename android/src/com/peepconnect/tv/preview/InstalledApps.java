@@ -48,47 +48,55 @@ final class InstalledApps {
                     if (resource != 0) icon = pm.getResourcesForApplication(info.activityInfo.applicationInfo)
                             .getDrawableForDensity(resource, DisplayMetrics.DENSITY_XXXHIGH, null);
                 } catch (Exception unavailable) { /* Retain the package's default artwork. */ }
-                if (icon != null) {
-                    Bitmap bitmap = Bitmap.createBitmap(384, 384, Bitmap.Config.ARGB_8888);
-                    Canvas canvas = new Canvas(bitmap);
-                    int width = Math.max(1, icon.getIntrinsicWidth());
-                    int height = Math.max(1, icon.getIntrinsicHeight());
-                    float scale = 336f / Math.max(width, height);
-                    int drawWidth = Math.max(1, Math.round(width * scale));
-                    int drawHeight = Math.max(1, Math.round(height * scale));
-                    int left = (384 - drawWidth) / 2, top = (384 - drawHeight) / 2;
-                    icon.setBounds(left, top, left + drawWidth, top + drawHeight);
-                    icon.draw(canvas);
-                    // Some package drawables include a very large transparent canvas.
-                    // Normalize visible ink once, without stretching or clipping the logo.
-                    int[] pixels = new int[384 * 384];
-                    bitmap.getPixels(pixels, 0, 384, 0, 0, 384, 384);
-                    int x0 = 384, y0 = 384, x1 = -1, y1 = -1;
-                    for (int y = 0; y < 384; y++) for (int x = 0; x < 384; x++) {
-                        if ((pixels[y * 384 + x] >>> 24) > 24) {
-                            x0 = Math.min(x0, x); y0 = Math.min(y0, y);
-                            x1 = Math.max(x1, x); y1 = Math.max(y1, y);
-                        }
-                    }
-                    if (x1 >= x0 && y1 >= y0) {
-                        int inkWidth = x1 - x0 + 1, inkHeight = y1 - y0 + 1;
-                        float inkScale = 352f / Math.max(inkWidth, inkHeight);
-                        int targetWidth = Math.round(inkWidth * inkScale), targetHeight = Math.round(inkHeight * inkScale);
-                        Bitmap normalized = Bitmap.createBitmap(384, 384, Bitmap.Config.ARGB_8888);
-                        new Canvas(normalized).drawBitmap(bitmap, new Rect(x0, y0, x1 + 1, y1 + 1),
-                                new Rect((384 - targetWidth) / 2, (384 - targetHeight) / 2,
-                                        (384 + targetWidth) / 2, (384 + targetHeight) / 2),
-                                new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG));
-                        bitmap.recycle(); bitmap = normalized;
-                    }
-                    ByteArrayOutputStream out = new ByteArrayOutputStream();
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
-                    app.put("icon", "data:image/png;base64," + Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP));
-                    bitmap.recycle();
-                }
+                Drawable banner = null;
+                try { banner = info.activityInfo.loadBanner(pm); } catch (Exception unavailable) { }
+                String artwork = null;
+                if (banner != null) try {
+                    artwork = encodeArtwork(banner, 640, 360);
+                    app.put("banner", true);
+                } catch (Exception unavailable) { /* A damaged banner may still have a valid icon. */ }
+                if (artwork == null && icon != null) try {
+                    artwork = encodeArtwork(icon, 384, 384);
+                } catch (Exception unavailable) { /* Keep the launchable app even without artwork. */ }
+                if (artwork != null) app.put("icon", artwork);
                 result.put(app);
             } catch (Exception ignored) { /* One broken icon should not hide the other apps. */ }
         }
         return result.toString();
     }
+    private static String encodeArtwork(Drawable artwork, int canvasWidth, int canvasHeight) {
+        Bitmap bitmap = Bitmap.createBitmap(canvasWidth, canvasHeight, Bitmap.Config.ARGB_8888);
+        int width = Math.max(1, artwork.getIntrinsicWidth()), height = Math.max(1, artwork.getIntrinsicHeight());
+        float scale = Math.min((canvasWidth - 16f) / width, (canvasHeight - 16f) / height);
+        int drawWidth = Math.max(1, Math.round(width * scale)), drawHeight = Math.max(1, Math.round(height * scale));
+        int left = (canvasWidth - drawWidth) / 2, top = (canvasHeight - drawHeight) / 2;
+        artwork.setBounds(left, top, left + drawWidth, top + drawHeight);
+        artwork.draw(new Canvas(bitmap));
+        // Trim transparent resource padding once; preserve visible ink and aspect ratio.
+        int[] pixels = new int[canvasWidth * canvasHeight];
+        bitmap.getPixels(pixels, 0, canvasWidth, 0, 0, canvasWidth, canvasHeight);
+        int x0 = canvasWidth, y0 = canvasHeight, x1 = -1, y1 = -1;
+        for (int y = 0; y < canvasHeight; y++) for (int x = 0; x < canvasWidth; x++) {
+            if ((pixels[y * canvasWidth + x] >>> 24) > 24) {
+                x0 = Math.min(x0, x); y0 = Math.min(y0, y);
+                x1 = Math.max(x1, x); y1 = Math.max(y1, y);
+            }
+        }
+        if (x1 >= x0 && y1 >= y0) {
+            int inkWidth = x1 - x0 + 1, inkHeight = y1 - y0 + 1;
+            float inkScale = Math.min((canvasWidth - 16f) / inkWidth, (canvasHeight - 16f) / inkHeight);
+            int targetWidth = Math.round(inkWidth * inkScale), targetHeight = Math.round(inkHeight * inkScale);
+            Bitmap normalized = Bitmap.createBitmap(canvasWidth, canvasHeight, Bitmap.Config.ARGB_8888);
+            new Canvas(normalized).drawBitmap(bitmap, new Rect(x0, y0, x1 + 1, y1 + 1),
+                    new Rect((canvasWidth - targetWidth) / 2, (canvasHeight - targetHeight) / 2,
+                            (canvasWidth + targetWidth) / 2, (canvasHeight + targetHeight) / 2),
+                    new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG));
+            bitmap.recycle(); bitmap = normalized;
+        }
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+        bitmap.recycle();
+        return "data:image/png;base64," + Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP);
+    }
+
 }

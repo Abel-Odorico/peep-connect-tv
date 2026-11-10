@@ -41,7 +41,7 @@ test('TV library keeps launchable apps and prefers local publisher artwork',asyn
  const icon='data:image/png;base64,aGVsbG8=';
  const {dom,w,d,errors}=await open(null,[
   {package:'com.netflix.ninja',name:'Netflix',icon},
-  {package:'example.tv.player',name:'Player de exemplo',icon}
+  {package:'example.tv.player',name:'Player de exemplo',icon,banner:true}
  ]);
  try{
   d.querySelector('[data-page=apps]').click();
@@ -51,6 +51,7 @@ test('TV library keeps launchable apps and prefers local publisher artwork',asyn
   assert.ok(d.querySelector('[data-id=netflix] .app-artwork svg'));
   assert.equal(d.querySelector('[data-id=netflix]').getAttribute('aria-label'),'Abrir Netflix');
   assert.equal(d.querySelectorAll('#apps .has-native-icon').length,1);
+  assert.equal(d.querySelectorAll('#apps .has-native-banner').length,1);
   assert.equal(d.querySelector('[data-id="example.tv.player"] .card-name').textContent,'Player de exemplo');
   assert.deepEqual(errors,[]);
  }finally{w.close()}
@@ -368,4 +369,23 @@ test('native wordmarks retain accessible names without repeated visual captions'
 
 test('public full-skin demo uses fictional accounts and blocks real internet tests',async()=>{
  const {w,d,errors}=await open(null,null,true);try{d.querySelector('[data-page=channel]').click();await delay(40);assert.equal(d.querySelector('#channel-title').textContent,'Canal demonstrativo');assert.match(d.querySelector('#channel-source').textContent,/fictícia/);let notice='';w.alert=message=>notice=message;d.querySelector('[data-page=performance]').click();d.querySelector('#pro-speed-test').click();assert.match(notice,/dados fictícios/);await delay(100);assert.equal(d.querySelector('dialog[open]'),null);assert.equal(fs.readFileSync(path.resolve(root,'../demo/studio.html'),'utf8').includes('Abel'),false);assert.deepEqual(errors,[]);}finally{w.close()}
+});
+
+
+test('channel remote navigation leaves the biography and reaches every lower reading block',async()=>{
+ const {w,d,errors}=await open(null,null,true);
+ try{
+  d.querySelector('[data-page=channel]').click();await delay(60);
+  const bio=d.querySelector('#channel-bio');bio.hidden=false;d.querySelector('#channel-bio-text').textContent='Descrição de demonstração';
+  const summary=bio.querySelector('summary'),last=d.querySelector('.channel-private');
+  const route=[summary,...d.querySelectorAll('.channel-kpi,.channel-observed,[data-series],.channel-ranking,.channel-snapshot,.channel-video-row,.channel-public-search summary,.channel-private')];
+  route.forEach((node,index)=>{const rect={x:20,y:100+index*200,width:300,height:90};node.getBoundingClientRect=()=>rect;node.getClientRects=()=>node.closest('[hidden]')?[]:[rect]});
+  const hiddenParagraph=d.querySelector('#channel-bio-text');hiddenParagraph.getClientRects=()=>[{x:20,y:190,width:300,height:30}];hiddenParagraph.getBoundingClientRect=()=>({x:20,y:190,width:300,height:30});
+  const scrolled=[];route.forEach(node=>node.scrollIntoView=()=>scrolled.push(node));
+  summary.focus();
+  for(const node of route.slice(1)){press(w,d,'ArrowDown');assert.equal(d.activeElement,node,'Down must advance beyond the biography and statistics');}
+  assert.equal(d.activeElement,last);await delay(30);assert.ok(scrolled.includes(last),'Final note must be brought into view');
+  for(const node of route.slice(0,-1).reverse()){press(w,d,'ArrowUp');assert.equal(d.activeElement,node);}
+  assert.equal(d.activeElement,summary);bio.open=true;press(w,d,'ArrowDown');assert.equal(d.activeElement,hiddenParagraph,'An expanded biography remains readable');press(w,d,'ArrowUp');assert.equal(d.activeElement,summary);assert.deepEqual(errors,[]);
+ }finally{w.close()}
 });
