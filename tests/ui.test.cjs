@@ -357,13 +357,13 @@ test('GestorPeep dashboard is reachable again from the skin',async()=>{
 });
 
 test('publisher artwork falls back to native without hiding the app name',async()=>{
- const icon='data:image/png;base64,aGVsbG8=';const {w,d,errors}=await open(null,[{package:'com.amazon.amazonvideo.livingroom',name:'Prime Video',icon}]);
- try{const card=d.querySelector('[data-id=prime]'),image=card.querySelector('img');image.dispatchEvent(new w.Event('error'));assert.equal(image.getAttribute('src'),icon);assert.equal(card.classList.contains('has-wordmark'),false);assert.equal(card.classList.contains('has-native-icon'),true);assert.equal(card.getAttribute('aria-label'),'Abrir Prime Video');image.dispatchEvent(new w.Event('error'));assert.equal(card.classList.contains('logo-unavailable'),true);assert.deepEqual(errors,[]);}finally{w.close()}
+ const icon='data:image/png;base64,aGVsbG8=';const {w,d,errors}=await open(null,[{package:'com.disney.disneyplus',name:'Disney+',icon}]);
+ try{const card=d.querySelector('[data-id=disney]'),image=card.querySelector('img');image.dispatchEvent(new w.Event('error'));assert.equal(image.getAttribute('src'),icon);assert.equal(card.classList.contains('has-wordmark'),false);assert.equal(card.classList.contains('has-native-icon'),true);assert.equal(card.getAttribute('aria-label'),'Abrir Disney+');image.dispatchEvent(new w.Event('error'));assert.equal(card.classList.contains('logo-unavailable'),true);assert.deepEqual(errors,[]);}finally{w.close()}
 });
 
 test('native wordmarks retain accessible names without repeated visual captions',async()=>{
  const icon='data:image/png;base64,aGVsbG8=';const {w,d,errors}=await open(null,[{package:'com.apple.atve.androidtv.appletv',name:'Apple TV',icon},{package:'com.globo.globoplay',name:'Globoplay',icon}]);
- try{d.querySelector('[data-page=apps]').click();for(const card of d.querySelectorAll('#apps .app-card')){assert.equal(card.classList.contains('has-wordmark'),true);assert.match(card.getAttribute('aria-label'),/^Abrir /);assert.ok(card.querySelector('img'));}assert.deepEqual(errors,[]);}finally{w.close()}
+ try{d.querySelector('[data-page=apps]').click();for(const card of d.querySelectorAll('#apps .app-card')){assert.equal(card.classList.contains('has-wordmark'),true);assert.match(card.getAttribute('aria-label'),/^Abrir /);assert.ok(card.querySelector('img,svg'));}assert.deepEqual(errors,[]);}finally{w.close()}
 });
 
 test('public full-skin demo uses fictional accounts and blocks real internet tests',async()=>{

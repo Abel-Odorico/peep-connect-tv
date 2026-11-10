@@ -6,6 +6,8 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Rect;
+import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
 import android.util.Base64;
 import android.util.DisplayMetrics;
@@ -57,6 +59,28 @@ final class InstalledApps {
                     int left = (384 - drawWidth) / 2, top = (384 - drawHeight) / 2;
                     icon.setBounds(left, top, left + drawWidth, top + drawHeight);
                     icon.draw(canvas);
+                    // Some package drawables include a very large transparent canvas.
+                    // Normalize visible ink once, without stretching or clipping the logo.
+                    int[] pixels = new int[384 * 384];
+                    bitmap.getPixels(pixels, 0, 384, 0, 0, 384, 384);
+                    int x0 = 384, y0 = 384, x1 = -1, y1 = -1;
+                    for (int y = 0; y < 384; y++) for (int x = 0; x < 384; x++) {
+                        if ((pixels[y * 384 + x] >>> 24) > 24) {
+                            x0 = Math.min(x0, x); y0 = Math.min(y0, y);
+                            x1 = Math.max(x1, x); y1 = Math.max(y1, y);
+                        }
+                    }
+                    if (x1 >= x0 && y1 >= y0) {
+                        int inkWidth = x1 - x0 + 1, inkHeight = y1 - y0 + 1;
+                        float inkScale = 352f / Math.max(inkWidth, inkHeight);
+                        int targetWidth = Math.round(inkWidth * inkScale), targetHeight = Math.round(inkHeight * inkScale);
+                        Bitmap normalized = Bitmap.createBitmap(384, 384, Bitmap.Config.ARGB_8888);
+                        new Canvas(normalized).drawBitmap(bitmap, new Rect(x0, y0, x1 + 1, y1 + 1),
+                                new Rect((384 - targetWidth) / 2, (384 - targetHeight) / 2,
+                                        (384 + targetWidth) / 2, (384 + targetHeight) / 2),
+                                new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG));
+                        bitmap.recycle(); bitmap = normalized;
+                    }
                     ByteArrayOutputStream out = new ByteArrayOutputStream();
                     bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
                     app.put("icon", "data:image/png;base64," + Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP));

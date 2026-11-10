@@ -1,24 +1,14 @@
 {
   "prime": {
-    "file": "prime.png",
-    "source": "https://play-lh.googleusercontent.com/qyXqjzPggunbifX0ODhCehdy4ei0F90u0N3f4pPk8NhgCZD75dH8bdQYPROGRVlTVOs8B8JAT58X6ImMZv5ugHg=s0-br30",
-    "provider": "Google Play \u2014 publisher artwork",
-    "listing": "https://play.google.com/store/apps/details?id=com.amazon.amazonvideo.livingroom",
-    "retrieved": "2026-11-09"
+    "rendering": "Bundled vector wordmark in dist/app.js, tight viewBox"
   },
   "disney": {
-    "file": "disney.png",
-    "source": "https://play-lh.googleusercontent.com/AEX_3Bk5_SEZfR4fUcJsWiyqW_RRVcLED9AM2HMUVHAPVTZhZHfP2q3M35mRe4LtCXlb712DtkKwkZa_nJ-0=s0-br30",
-    "provider": "Google Play \u2014 publisher artwork",
-    "listing": "https://play.google.com/store/apps/details?id=com.disney.disneyplus",
-    "retrieved": "2026-11-09"
+    "file": "disney.svg",
+    "source": "https://commons.wikimedia.org/wiki/File:Disney%2B_logo.svg",
+    "rendering": "Local vector, monochrome on a dark canvas"
   },
   "spotify": {
-    "file": "spotify.png",
-    "source": "https://play-lh.googleusercontent.com/7ghCqs4kKYrQpTECddnejlSeAXgpdiiKlIghuDR869MpF5msXdPsd3gqjC6lstD_NfJkmP0LAUJTty7UACcrLw=s0-br30",
-    "provider": "Google Play \u2014 publisher artwork",
-    "listing": "https://play.google.com/store/apps/details?id=com.spotify.tv.android",
-    "retrieved": "2026-11-09"
+    "rendering": "Bundled vector logomark in dist/app.js"
   },
   "netflix": {
     "rendering": "bundled SVG logomark in dist/app.js",
@@ -27,5 +17,16 @@
   "youtube": {
     "rendering": "bundled SVG play symbol in dist/app.js",
     "source": "https://www.youtube.com/howyoutubeworks/resources/brand-resources/"
+  },
+  "globoplay": {
+    "file": "globoplay.svg",
+    "source": "https://commons.wikimedia.org/wiki/Special:FilePath/Globoplay_logo_2020.svg"
+  },
+  "max": {
+    "file": "max.svg",
+    "source": "https://commons.wikimedia.org/wiki/Special:FilePath/Max_logo.svg"
+  },
+  "appletv": {
+    "rendering": "Bundled vector wordmark in dist/app.js"
   }
 }

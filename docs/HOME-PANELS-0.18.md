@@ -21,3 +21,17 @@ Nenhuma fonte, autorização, período ou intervalo de coleta muda. Nenhum timer
 npm test cobre navegação, valores pequenos/zero, temas, logos preferenciais, fallback e acessibilidade. O Chromium local não pôde iniciar neste ambiente e a prévia local não é acessível ao navegador remoto; não declarar teste visual ou de desempenho na Konka por causa dos testes DOM. Compilação assinada e aplicação na TV precisam ser executadas no Mac.
 
 Atualização no Mac: entrar na pasta konka-glass, git pull --ff-only, python3 android/build_apk.py, python3 android/instalar_tv.py. Se a porta ADB mudou, usar a porta atual de conexão em --device. Não trocar keystore, HOME nem firmware.
+
+## Correção 0.18.1
+
+- Logos vetoriais locais em canvas único: Netflix, YouTube, Prime Video,
+  Disney+, Globoplay, Spotify, Apple TV e Max. Sem imagens quadradas de loja
+  esticadas para cartões horizontais; nomes acessíveis continuam presentes.
+- Margens menores e escala por proporção: símbolos e wordmarks ocupam a área
+  útil sem cortes. O Android normaliza margens transparentes excessivas dos
+  ícones dos demais pacotes antes de enviá-los à interface.
+- A demo identifica a versão e versiona os arquivos JS/CSS para evitar cache
+  de uma versão anterior. Publicar a demo não atualiza o Mac ou o APK da TV.
+- Validação: 24 testes de UI, 32 testes dos serviços e 10 do instalador;
+  APK com assinatura existente verificada, instalado na Konka e versão
+  Android confirmada. Home conferida em captura privada da TV.

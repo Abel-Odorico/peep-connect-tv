@@ -17,3 +17,8 @@ Obsidiana, Solstício e Atlântida foram geradas originalmente para este projeto
 ## Arte dos aplicativos (0.18.0)
 
 Prime Video, Disney+ e Spotify: imagens de seus publicadores na Google Play, armazenadas localmente em dist/assets/apps. Origem e consulta em sources.json. Netflix e YouTube mantêm símbolos vetoriais. Arte usada para identificar o app correspondente, sem recoloração; as marcas pertencem aos titulares. Este projeto não representa vínculo com essas empresas.
+
+0.18.1 bundles Disney+, Globoplay and Max SVG wordmarks from Wikimedia Commons
+(see dist/assets/apps/sources.json). Existing vector symbols for Netflix,
+YouTube, Prime Video, Spotify and Apple TV are rendered with safe proportions.
+Brand assets remain the property of their respective owners.
