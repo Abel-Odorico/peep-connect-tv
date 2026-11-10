@@ -20,7 +20,14 @@
  return new Response(JSON.stringify(data),{headers:{'Content-Type':'application/json'}});
  };
  document.addEventListener('click',event=>{if(event.target.closest('#pro-speed-test,#network,#network-pill,#speed-start')){event.preventDefault();event.stopImmediatePropagation();alert('Teste de internet disponível apenas no aplicativo real. Esta demo usa dados fictícios.')}},true);
- document.addEventListener('DOMContentLoaded',()=>{
+ document.addEventListener('DOMContentLoaded',async()=>{
+  // The real localJSON deliberately rejects remote origins; only this demo replaces it.
+  localJSON=async path=>{const response=await window.fetch(path);const data=await response.json();if(!response.ok)throw Error(data.error);return data};
+  loadWeather=async()=>{weather={...await localJSON('/api/weather'),savedAt:Date.now()};weatherError=false;displayWeather()};
+  await loadWeather();await youtubeStatus(false);
+  showServiceStatus('Demonstração','Dados fictícios · nenhuma conta ou TV é consultada.',true);
+  document.querySelector('#refresh-services').onclick=()=>notify('Esta demonstração usa somente dados fictícios.');
+
   const name=document.querySelector('#profile');name.setAttribute('aria-label','Perfil demonstrativo');
   document.querySelector('#greeting').textContent='PRÉVIA · DADOS FICTÍCIOS';
   const target=new URLSearchParams(location.search).get('page');if(['channel','performance','ambient'].includes(target))navigate(target);

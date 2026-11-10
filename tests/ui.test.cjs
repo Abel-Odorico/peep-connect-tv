@@ -16,7 +16,7 @@ async function open(initialPrefs,installedApps,demo=false){
  html=html.replace(/<script src="[^"]+" defer><\/script>/g,'').replace(/<link[^>]*stylesheet[^>]*>/g,'');
  html=html.replace('</body>','<script>'+files.map(f=>fs.readFileSync(path.join(root,f),'utf8')).join('\n').replaceAll('</script','<\\/script')+'</script></body>');
  const errors=[];const console=new VirtualConsole();console.on('jsdomError',e=>errors.push(e.message));
- const dom=new JSDOM(html,{url:'http://127.0.0.1:8770/?tv=1',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:console,beforeParse(w){
+ const dom=new JSDOM(html,{url:demo?'https://example.org/demo/studio.html':'http://127.0.0.1:8770/?tv=1',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:console,beforeParse(w){
   if(initialPrefs){w.localStorage.setItem('konka-glass-v1',JSON.stringify(initialPrefs));w.Image=class{set src(value){this._src=value;w.setTimeout(()=>this.onload?.(),0)}get src(){return this._src}}}
   w.TextEncoder=TextEncoder;w.TextDecoder=TextDecoder;w.Response=Response;w.AbortSignal=AbortSignal;w.AbortController=AbortController;
   w.matchMedia=()=>({matches:false});w.HTMLElement.prototype.scrollIntoView=()=>{};
