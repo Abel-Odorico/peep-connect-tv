@@ -22,3 +22,7 @@ O APK depende do serviço no computador e ADB reverse. Não afirmar que é launc
 Consultar docs/HOME-PANELS-0.18.md. installed-apps.js preserva a descoberta Android e prefere appArtwork local quando disponível. app.js mantém rótulos acessíveis e fallback; installed-apps.css possui a área de segurança da arte. Não aplicar cover em ícones nem repetir legendas sobre wordmarks. InstalledApps.java pede recursos de maior densidade e conserva a proporção. tv-panels.css implementa a hierarquia editorial do Dashboard v3, seguindo os temas da skin; nunca alterar a fonte/semântica das métricas para adaptar o visual. scripts/build_tv_demo.py regenera a demo completa com fixtures explicitamente fictícias antes dos scripts reais. Não levar tokens nem respostas pessoais à demo.
 
 Consultar também docs/UI-VALIDATED.md: preservar os logos aprovados e corrigir os pacotes nativos separadamente; testar detalhes fechados na navegação por D-pad.
+
+## Agilidade 0.18.3
+
+Consultar docs/RESPONSIVENESS-0.18.3.md. A navegação espacial global de app.js sai de select/input com cima/baixo e aceita no máximo um movimento por quadro em tecla segurada; não reintroduzir retorno precoce para SELECT. Históricos de Performance são coletados do evento peep-metrics, não do paint da guia. server.py responde dist com ETag/304 e gzip mantendo no-cache.

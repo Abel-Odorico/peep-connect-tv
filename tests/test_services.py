@@ -1,3 +1,4 @@
+import gzip
 import io
 import json
 import os
@@ -93,6 +94,33 @@ class HandlerTests(unittest.TestCase):
         for path in ['/../.private/tmdb.key', '/%2e%2e/.private/google-client.json', '/.private/youtube-tokens.json']:
             self.assertEqual(self.call(path)[0], 404)
         self.assertEqual(self.call('/api/youtube/status', headers={'Origin': 'https://untrusted.invalid'})[0], 403)
+
+    def raw(self, path, headers=None):
+        handler = server.Handler.__new__(server.Handler)
+        handler.path, handler.headers = path, {'Host': '127.0.0.1:8770', **(headers or {})}
+        result = {'headers': {}}
+        handler.send_response = lambda status: result.update(status=status)
+        handler.send_header = lambda name, value: result['headers'].__setitem__(name, value)
+        handler.end_headers = lambda: None
+        handler.wfile = io.BytesIO()
+        handler.do_GET()
+        return result['status'], result['headers'], handler.wfile.getvalue()
+
+    def test_static_files_revalidate_and_compress_without_stale_content(self):
+        status, headers, body = self.raw('/app.js', {'Accept-Encoding': 'gzip, deflate'})
+        self.assertEqual(status, 200)
+        self.assertEqual(headers['Content-Encoding'], 'gzip')
+        self.assertEqual(headers['Cache-Control'], 'no-cache')
+        self.assertEqual(gzip.decompress(body), (server.DIST / 'app.js').read_bytes())
+        status, again, body = self.raw('/app.js', {'If-None-Match': headers['ETag']})
+        self.assertEqual((status, body), (304, b''))
+        status, plain, body = self.raw('/app.js')
+        self.assertNotIn('Content-Encoding', plain)
+        self.assertEqual(body, (server.DIST / 'app.js').read_bytes())
+        status, image, _ = self.raw('/assets/collections/obsidiana.png', {'Accept-Encoding': 'gzip'})
+        self.assertEqual(status, 200)
+        self.assertNotIn('Content-Encoding', image)
+        self.assertTrue(image['ETag'])
 
     def test_disconnect_requires_same_origin_and_explicit_header(self):
         self.assertEqual(self.call('/api/youtube/disconnect', 'POST')[0], 403)

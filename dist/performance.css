@@ -10,3 +10,6 @@
 @media(prefers-reduced-motion:reduce){.performance-dashboard *{animation:none!important;transition:none!important}}
 
 body.performance-view .landscape:after{background:#070b1de8}body.performance-view.horizon-light .landscape:after,body.performance-view[data-theme=adl-day] .landscape:after{background:#efebe3e8}
+/* 0.18.3 · Faixa observada sob cada histórico; números tabulares evitam que os medidores "pulem" a cada leitura. */
+.perf-range{display:block;margin-top:6px;font-size:11px;letter-spacing:.01em;color:var(--muted,#9fb0bf);opacity:.85;font-variant-numeric:tabular-nums}
+:is(.perf-gauge,.perf-detail,.pro-rates,.pro-x-axis,.pro-y-axis,.pro-link-strip,.device-hub,.hub-internet,.system-table,.process-list) :is(strong,b,dd,span,small,output){font-variant-numeric:tabular-nums}

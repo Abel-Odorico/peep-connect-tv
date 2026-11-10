@@ -30,3 +30,7 @@ html.tv-mode dialog,html.tv-mode dialog::backdrop{backdrop-filter:none!important
 body.runtime-modal .peep-motion-stage *,body.runtime-modal .landscape{animation-play-state:paused!important}
 .theme-studio-dialog .studio-tabs button{transition:none;scroll-margin:0}
 .theme-studio-dialog .studio-tab-body{scroll-behavior:auto;contain:layout paint}
+/* 0.18.3 · Foco do controle: só transform, borda e cor transitam; sombras desfocadas não são repintadas a cada tecla. */
+html.tv-mode body button,html.tv-mode body a,html.tv-mode body summary{transition-property:transform,border-color,background-color,color,opacity;transition-duration:.12s}
+html.tv-mode body :is(.utility,.network-card,.system-widget,.market-card,.living-market,.weather-card,.poster-cover,.channel-video-row):is(:hover,:focus-visible){box-shadow:none}
+html.tv-mode body :is(button,a,summary,select,input,[tabindex="0"]){scroll-margin:28px 0}
