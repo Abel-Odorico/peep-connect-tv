@@ -1,3 +1,7 @@
+# Interface 0.18.0
+
+Logos com proporção preservada, arte local dos publicadores e painéis editoriais baseados no Dashboard v3. [Detalhes e limites](docs/HOME-PANELS-0.18.md). [Prévia com dados fictícios](https://abel-odorico.github.io/peep-connect-tv/demo/studio.html). O APK nativo precisa ser recompilado e instalado no Mac com a assinatura existente.
+
 # Peep Connect TV
 
 Experiência de TV em HTML, CSS e JavaScript, com um aplicativo Android WebView e um serviço Python local. Interface para controle remoto, favoritos, temas, fundos animados, descanso, clima, TMDB, YouTube e diagnóstico do dispositivo.

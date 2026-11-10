@@ -16,3 +16,7 @@
 - `server.py`: HTTP loopback, Host/Origin, arquivos somente dist; `tmdb_service.py`, `youtube_service.py`, `ambient_data.py`, `performance_data.py`: serviços.
 
 O APK depende do serviço no computador e ADB reverse. Não afirmar que é launcher HOME ou serviço autônomo. Credenciais, identidade e assinatura ficam em .private e nunca no frontend.
+
+## Home e painéis 0.18
+
+Consultar docs/HOME-PANELS-0.18.md. installed-apps.js preserva a descoberta Android e prefere appArtwork local quando disponível. app.js mantém rótulos acessíveis e fallback; installed-apps.css possui a área de segurança da arte. Não aplicar cover em ícones nem repetir legendas sobre wordmarks. InstalledApps.java pede recursos de maior densidade e conserva a proporção. tv-panels.css implementa a hierarquia editorial do Dashboard v3, seguindo os temas da skin; nunca alterar a fonte/semântica das métricas para adaptar o visual. scripts/build_tv_demo.py regenera a demo completa com fixtures explicitamente fictícias antes dos scripts reais. Não levar tokens nem respostas pessoais à demo.

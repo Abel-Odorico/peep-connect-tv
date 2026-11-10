@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.util.Base64;
+import android.util.DisplayMetrics;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
@@ -40,10 +41,21 @@ final class InstalledApps {
                 CharSequence label = info.loadLabel(pm);
                 app.put("name", label == null ? entry.getKey() : label.toString());
                 Drawable icon = info.loadIcon(pm);
+                try {
+                    int resource = info.getIconResource();
+                    if (resource != 0) icon = pm.getResourcesForApplication(info.activityInfo.applicationInfo)
+                            .getDrawableForDensity(resource, DisplayMetrics.DENSITY_XXXHIGH, null);
+                } catch (Exception unavailable) { /* Retain the package's default artwork. */ }
                 if (icon != null) {
-                    Bitmap bitmap = Bitmap.createBitmap(192, 192, Bitmap.Config.ARGB_8888);
+                    Bitmap bitmap = Bitmap.createBitmap(384, 384, Bitmap.Config.ARGB_8888);
                     Canvas canvas = new Canvas(bitmap);
-                    icon.setBounds(0, 0, 192, 192);
+                    int width = Math.max(1, icon.getIntrinsicWidth());
+                    int height = Math.max(1, icon.getIntrinsicHeight());
+                    float scale = 336f / Math.max(width, height);
+                    int drawWidth = Math.max(1, Math.round(width * scale));
+                    int drawHeight = Math.max(1, Math.round(height * scale));
+                    int left = (384 - drawWidth) / 2, top = (384 - drawHeight) / 2;
+                    icon.setBounds(left, top, left + drawWidth, top + drawHeight);
                     icon.draw(canvas);
                     ByteArrayOutputStream out = new ByteArrayOutputStream();
                     bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);

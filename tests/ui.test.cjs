@@ -9,9 +9,10 @@ function fixture(){
  const at=Date.now()/1000;
  return {connected:true,at,source:'Android nativo',sampleId:1,model:'Test TV',android:'14',ram:{totalBytes:1610612736,availableBytes:350000000},network:{interface:'wifi',transport:'Wi-Fi',rssi:-50,rxLinkMbps:433,txLinkMbps:433,frequencyMHz:5200,traffic:{downloadMbps:.0004,uploadMbps:0}},storage:{availableBytes:4000000000},uptimeSeconds:3600};
 }
-async function open(initialPrefs,installedApps){
+async function open(initialPrefs,installedApps,demo=false){
  let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
  const files=[...html.matchAll(/<script src="([^"]+)" defer><\/script>/g)].map(m=>m[1]);
+ if(demo)files.unshift('../demo/studio-fixtures.js');
  html=html.replace(/<script src="[^"]+" defer><\/script>/g,'').replace(/<link[^>]*stylesheet[^>]*>/g,'');
  html=html.replace('</body>','<script>'+files.map(f=>fs.readFileSync(path.join(root,f),'utf8')).join('\n').replaceAll('</script','<\\/script')+'</script></body>');
  const errors=[];const console=new VirtualConsole();console.on('jsdomError',e=>errors.push(e.message));
@@ -36,7 +37,7 @@ async function open(initialPrefs,installedApps){
   };
  }});await delay(30);return {dom,w:dom.window,d:dom.window.document,errors};
 }
-test('TV library lists all launchable apps with their native icons',async()=>{
+test('TV library keeps launchable apps and prefers local publisher artwork',async()=>{
  const icon='data:image/png;base64,aGVsbG8=';
  const {dom,w,d,errors}=await open(null,[
   {package:'com.netflix.ninja',name:'Netflix',icon},
@@ -45,8 +46,11 @@ test('TV library lists all launchable apps with their native icons',async()=>{
  try{
   d.querySelector('[data-page=apps]').click();
   assert.equal(d.querySelectorAll('#apps .app-card').length,2);
-  assert.equal(d.querySelectorAll('#apps .native-app-icon').length,2);
-  assert.equal(d.querySelectorAll('#apps .has-native-icon').length,2);
+  assert.equal(d.querySelectorAll('#apps .native-app-icon').length,1);
+  assert.equal(d.querySelectorAll('#apps .has-publisher-art').length,1);
+  assert.ok(d.querySelector('[data-id=netflix] .app-artwork svg'));
+  assert.equal(d.querySelector('[data-id=netflix]').getAttribute('aria-label'),'Abrir Netflix');
+  assert.equal(d.querySelectorAll('#apps .has-native-icon').length,1);
   assert.equal(d.querySelector('[data-id="example.tv.player"] .card-name').textContent,'Player de exemplo');
   assert.deepEqual(errors,[]);
  }finally{w.close()}
@@ -350,4 +354,18 @@ test('switching from a dark Horizon theme to Luz Natural clears stale inline pal
 
 test('GestorPeep dashboard is reachable again from the skin',async()=>{
  const {dom,w,d,errors}=await open();try{let count=0;w.PeepTV.openDashboard=()=>count++;const button=d.querySelector('#gestorpeep-dashboard');assert.ok(button);button.click();assert.equal(count,1);assert.match(button.getAttribute('aria-label'),/GestorPeep/);assert.deepEqual(errors,[]);}finally{w.close()}
+});
+
+test('publisher artwork falls back to native without hiding the app name',async()=>{
+ const icon='data:image/png;base64,aGVsbG8=';const {w,d,errors}=await open(null,[{package:'com.amazon.amazonvideo.livingroom',name:'Prime Video',icon}]);
+ try{const card=d.querySelector('[data-id=prime]'),image=card.querySelector('img');image.dispatchEvent(new w.Event('error'));assert.equal(image.getAttribute('src'),icon);assert.equal(card.classList.contains('has-wordmark'),false);assert.equal(card.classList.contains('has-native-icon'),true);assert.equal(card.getAttribute('aria-label'),'Abrir Prime Video');image.dispatchEvent(new w.Event('error'));assert.equal(card.classList.contains('logo-unavailable'),true);assert.deepEqual(errors,[]);}finally{w.close()}
+});
+
+test('native wordmarks retain accessible names without repeated visual captions',async()=>{
+ const icon='data:image/png;base64,aGVsbG8=';const {w,d,errors}=await open(null,[{package:'com.apple.atve.androidtv.appletv',name:'Apple TV',icon},{package:'com.globo.globoplay',name:'Globoplay',icon}]);
+ try{d.querySelector('[data-page=apps]').click();for(const card of d.querySelectorAll('#apps .app-card')){assert.equal(card.classList.contains('has-wordmark'),true);assert.match(card.getAttribute('aria-label'),/^Abrir /);assert.ok(card.querySelector('img'));}assert.deepEqual(errors,[]);}finally{w.close()}
+});
+
+test('public full-skin demo uses fictional accounts and blocks real internet tests',async()=>{
+ const {w,d,errors}=await open(null,null,true);try{d.querySelector('[data-page=channel]').click();await delay(40);assert.equal(d.querySelector('#channel-title').textContent,'Canal demonstrativo');assert.match(d.querySelector('#channel-source').textContent,/fictícia/);let notice='';w.alert=message=>notice=message;d.querySelector('[data-page=performance]').click();d.querySelector('#pro-speed-test').click();assert.match(notice,/dados fictícios/);await delay(100);assert.equal(d.querySelector('dialog[open]'),null);assert.equal(fs.readFileSync(path.resolve(root,'../demo/studio.html'),'utf8').includes('Abel'),false);assert.deepEqual(errors,[]);}finally{w.close()}
 });

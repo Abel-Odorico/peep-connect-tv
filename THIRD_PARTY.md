@@ -13,3 +13,7 @@ O motor de teste é carregado sob demanda. O teste mede HTTP até a Cloudflare e
 ## Artes da Coleção 0.16
 
 Obsidiana, Solstício e Atlântida foram geradas originalmente para este projeto com ferramenta de geração de imagem. Não são fotografias documentais nem cópias de papéis Apple. Os arquivos PNG originais de produção são mantidos em dist/assets/collections. As animações são composições CSS e vetoriais próprias sobre essas artes. A inspiração de cor é a referência ADL fornecida pelo usuário; os acentos claros de Solstício e Atlântida são variantes funcionais para a interface escura.
+
+## Arte dos aplicativos (0.18.0)
+
+Prime Video, Disney+ e Spotify: imagens de seus publicadores na Google Play, armazenadas localmente em dist/assets/apps. Origem e consulta em sources.json. Netflix e YouTube mantêm símbolos vetoriais. Arte usada para identificar o app correspondente, sem recoloração; as marcas pertencem aos titulares. Este projeto não representa vínculo com essas empresas.

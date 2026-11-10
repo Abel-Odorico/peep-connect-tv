@@ -1,18 +1,105 @@
-/* Linguagem de apresentação compartilhada; cores herdadas do tema ativo. */
-:is(.channel-dashboard,.performance-dashboard,.ambient-dashboard){--panel-accent:var(--h-accent,var(--accent,#00e0ff));--panel-line:color-mix(in srgb,var(--panel-accent) 26%,transparent)}
-:is(.channel-hero,.perf-header,.ambient-hero){position:relative;padding:24px 26px!important;border:1px solid var(--panel-line);border-radius:20px;background:linear-gradient(115deg,color-mix(in srgb,var(--panel-accent) 13%,transparent),transparent 75%);overflow:hidden}
-:is(.channel-hero,.perf-header,.ambient-hero):before{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,var(--panel-line) 1px,transparent 1px),linear-gradient(var(--panel-line) 1px,transparent 1px);background-size:48px 48px;opacity:.12}
-:is(.channel-kpi,.channel-history,.channel-ranking,.channel-snapshot,.perf-gauge,.perf-detail,.perf-process-card,.living-market){border-radius:20px;border-color:var(--panel-line);box-shadow:inset 0 1px 0 #ffffff12,0 12px 28px #00000012}
-:is(.channel-kpi,.perf-gauge,.living-market){position:relative;overflow:hidden}
-:is(.channel-kpi,.perf-gauge,.living-market):after{content:'';position:absolute;left:22px;right:22px;top:0;height:2px;background:linear-gradient(90deg,transparent,var(--panel-accent),transparent);pointer-events:none}
-:is(.channel-kpi strong,.market-price,.perf-dial strong){font-variant-numeric:tabular-nums;letter-spacing:-.035em}
-.channel-dashboard{--channel-accent:var(--panel-accent)}
-.channel-history svg,.perf-mini-graph svg{overflow:visible}
-.channel-history-line,.perf-mini-graph path{stroke-linecap:round;stroke-linejoin:round}
-.channel-series button[aria-pressed=true]{box-shadow:inset 0 -2px var(--panel-accent)}
+/* Dashboard v3: editorial hierarchy, headline / notes / graph stage.
+   Reference: gestorpeep-com/includes/painel_tv_v3.php. No extra telemetry loop. */
+body{--v3-bg:var(--h-base,#000);--v3-surface:var(--h-surface,#0a0a0b);--v3-ink:var(--h-ink,#f4efe8);--v3-muted:var(--h-muted,#b9afa1);--v3-accent:var(--accent,#5fb8b0);--v3-gold:#c9a961;--v3-line:color-mix(in srgb,var(--v3-ink) 16%,transparent)}
+body.horizon-light,body[data-theme=adl-day]{--v3-bg:var(--h-base,#f4efe8);--v3-surface:var(--h-surface,#fbf8f3);--v3-ink:var(--h-ink,#0b2545);--v3-muted:var(--h-muted,#5c5a54);--v3-gold:#755b2c}
+body:is(.channel-view,.performance-view) .landscape:after{background:var(--v3-bg);opacity:.96}
+body:is([data-theme=adl-absolute],[data-theme=adl-night]){--v3-accent:#5fb8b0;--v3-gold:#c9a961}
+body[data-theme=adl-day]{--v3-accent:#0f6a6a;--v3-gold:#755b2c}
+body :is(.channel-dashboard,.performance-dashboard){color:var(--v3-ink);--channel-ink:var(--v3-ink);--channel-muted:var(--v3-muted);--channel-surface:var(--v3-surface);--channel-soft:var(--v3-surface);--channel-border:var(--v3-line);--channel-accent:var(--v3-accent);--perf-surface:var(--v3-surface);--perf-card:var(--v3-surface);--perf-muted:var(--v3-muted)}
+body :is(.channel-hero,.perf-header){position:relative;padding:6px 0 21px!important;margin-bottom:20px;border:0;border-bottom:1px solid var(--v3-line);border-radius:0;background:none;overflow:visible;box-shadow:none}
+body :is(.channel-hero,.perf-header):before{display:none}
+body :is(.channel-hero,.perf-header) h1{font:800 clamp(27px,3vw,48px)/1.08 Manrope,Inter,sans-serif;letter-spacing:-.035em;color:var(--v3-ink)}
+body :is(.channel-hero,.perf-header) .eyebrow{color:var(--v3-gold);font-size:10px;font-weight:700;letter-spacing:.2em}
+body :is(.channel-actions button,.perf-header button){border:1px solid var(--v3-line);border-radius:8px;color:var(--v3-ink);background:var(--v3-surface);font-size:11px;padding:9px 13px}
+body .channel-dashboard .channel-identity{background:transparent;border:0;border-bottom:1px solid var(--v3-line);border-radius:0;padding:4px 0 18px}
+body .channel-dashboard .channel-avatar{border-radius:10px;width:44px;height:44px;font-size:20px}
+body .channel-dashboard #channel-stats-result{grid-template-columns:minmax(215px,.72fr) minmax(0,1.5fr);gap:24px 34px;align-items:start}
+body .channel-dashboard .channel-kpis{grid-column:1;grid-row:1/3;display:flex;flex-direction:column;gap:0;min-width:0}
+body .channel-dashboard .channel-kpi{display:flex;flex-direction:column;gap:10px;min-height:0;padding:20px 0 23px 20px;margin:0;background:none;border:0;border-top:1px solid var(--v3-line);border-radius:0;box-shadow:none;overflow:visible}
+body .channel-dashboard .channel-kpi:before,body .channel-dashboard .channel-kpi:after{display:none}
+body .channel-dashboard .channel-kpi.views{order:-1;border:0;border-left:3px solid var(--v3-gold);padding-top:4px;padding-bottom:24px;margin-bottom:20px}
+body .channel-dashboard .channel-kpi span{font-size:13px;font-weight:500;color:var(--v3-muted)}
+body .channel-dashboard .channel-kpi strong{font-family:Manrope,Inter,sans-serif;font-size:clamp(28px,3.3vw,50px);font-weight:800;color:var(--v3-ink);letter-spacing:-.045em;line-height:1.12;overflow-wrap:anywhere}
+body .channel-dashboard .channel-kpi.views strong{font-size:clamp(34px,4.5vw,70px)}
+body .channel-dashboard .channel-kpi small{font-size:11px;line-height:1.55;color:var(--v3-muted)}
+body .channel-dashboard .channel-insights{display:contents}
+body .channel-dashboard .channel-history{grid-column:2;grid-row:1;padding:0;border:0;background:none;box-shadow:none;border-radius:0;min-width:0}
+body .channel-dashboard .channel-card-head{padding-bottom:15px;border-bottom:1px solid var(--v3-line)}
+body .channel-dashboard .channel-card-head .eyebrow{color:var(--v3-gold);font-size:9px;letter-spacing:.18em}
+body .channel-dashboard .channel-card-head h3{font-size:17px;font-weight:700}
+body .channel-dashboard .channel-history svg{height:190px}
+body .channel-dashboard .channel-history-current strong{font-family:Manrope,Inter,sans-serif;font-weight:800;color:var(--v3-accent)}
+body .channel-dashboard .channel-series{margin-top:14px}
+body .channel-dashboard .channel-series button{border-radius:6px;font-size:11px;padding:7px 12px}
+body .channel-dashboard .channel-series button[aria-pressed=true]{background:transparent;border-color:var(--v3-gold);color:var(--v3-ink);box-shadow:inset 0 -2px var(--v3-gold)}
+body .channel-dashboard .channel-observed{grid-column:2;grid-row:2;border:0;border-radius:0;background:none;gap:15px}
+body .channel-dashboard .channel-observed>div{padding:12px 0;background:none;border-top:1px solid var(--v3-line)}
+body .channel-dashboard .channel-observed span{color:var(--v3-gold);font-size:8px}
+body .channel-dashboard .channel-observed strong{font-family:Manrope,Inter,sans-serif;font-size:26px;font-weight:800}
+body .channel-dashboard .channel-observed>p{background:none;padding:0;font-size:10px}
+body .channel-dashboard .channel-ranking{grid-column:1/-1;grid-row:3;padding:18px 0;border:0;border-top:1px solid var(--v3-line);border-radius:0;background:none;box-shadow:none}
+body .channel-dashboard #channel-ranking-list{display:grid;grid-template-columns:1fr 1fr;gap:18px 30px}
+body .channel-dashboard .channel-snapshot,body .channel-dashboard .channel-recent-head,body .channel-dashboard .channel-video-list{grid-column:1/-1}
+body .channel-dashboard .channel-snapshot{padding:20px 0;border:0;border-top:1px solid var(--v3-line);background:none;border-radius:0}
+body .channel-dashboard .channel-snapshot-grid article{background:var(--v3-surface);border:1px solid var(--v3-line);border-radius:8px;padding:18px;min-height:110px}
+body .channel-dashboard .channel-snapshot-grid strong{font-family:Manrope,Inter,sans-serif;font-weight:800;color:var(--v3-ink)}
+body .channel-dashboard .channel-rank i{height:5px;background:var(--v3-line)}
+body .channel-dashboard .channel-rank i b{background:var(--v3-accent)}
+body .channel-dashboard #channel-trend-fill stop{stop-color:var(--v3-accent)}
+body .channel-dashboard .channel-video-row{background:none;border-radius:0;border:0;border-bottom:1px solid var(--v3-line);padding:12px 0}
+body .channel-dashboard .channel-private{border-radius:8px;background:var(--v3-surface);border-color:var(--v3-line);color:var(--v3-muted)}
+/* Percentage gauges become readable headlines with their actual history below. */
+body .performance-dashboard .perf-gauge-grid{grid-template-columns:minmax(215px,.72fr) minmax(0,1.5fr);gap:22px 34px;align-items:start}
+body .performance-dashboard .perf-gauge{padding:0 0 18px 20px;border:0;border-left:3px solid var(--v3-gold);border-radius:0;background:none;box-shadow:none;min-width:0;--metric-color:var(--v3-accent)}
+body .performance-dashboard .perf-gauge:after{display:none}
+body .performance-dashboard .perf-gauge:not(.perf-network-hero){grid-column:1;display:block}
+body .performance-dashboard .perf-network-hero{grid-column:2;grid-row:1/3;border:0;padding:0}
+body .performance-dashboard .perf-card-title{display:flex;justify-content:space-between;align-items:baseline;color:var(--v3-muted);font-size:14px;font-weight:500}
+body .performance-dashboard .perf-card-title small{font-size:10px;color:var(--v3-muted)}
+body .performance-dashboard .perf-dial{display:flex;align-items:start;justify-content:start;flex-direction:column;gap:11px;height:auto;min-height:110px;margin:15px 0 10px;padding:0;text-align:left}
+body .performance-dashboard .perf-dial>svg{display:none}
+body .performance-dashboard .perf-dial>strong{position:static;font:800 clamp(40px,5vw,74px)/1.06 Manrope,Inter,sans-serif;letter-spacing:-.05em;color:var(--v3-ink);text-shadow:none}
+body .performance-dashboard .perf-dial>span{position:static;font:500 12px/1.5 Inter,sans-serif;color:var(--v3-muted);max-width:none}
+body .performance-dashboard .perf-mini-graph{height:42px;margin:0}
+body .performance-dashboard .perf-mini-graph .living-chart{height:42px}
+body .performance-dashboard .perf-mini-graph path{stroke:var(--v3-accent);filter:none}
+body .performance-dashboard .perf-gauge>p{font-size:11px;color:var(--v3-muted);line-height:1.5}
+body .performance-dashboard .pro-app-memory{font-size:10px;border-top:1px solid var(--v3-line);color:var(--v3-muted)}
+body .performance-dashboard .pro-network-top{padding-bottom:16px;border-bottom:1px solid var(--v3-line)}
+body .performance-dashboard .pro-kicker{color:var(--v3-gold);font-size:9px;letter-spacing:.18em}
+body .performance-dashboard .pro-network-top h2{font:700 clamp(19px,2vw,29px)/1.2 Manrope,Inter,sans-serif;color:var(--v3-ink);max-width:none;margin-top:8px}
+body .performance-dashboard .pro-live{color:var(--v3-muted);font-size:10px;background:none;border-color:var(--v3-line)}
+body .performance-dashboard .pro-rates{padding:24px 0 12px}
+body .performance-dashboard .pro-rates strong{font:800 clamp(32px,4vw,62px)/1.1 Manrope,Inter,sans-serif;color:var(--v3-ink);letter-spacing:-.04em}
+body .performance-dashboard .pro-rates>div>span{color:var(--v3-muted);font-size:11px}
+body .performance-dashboard .pro-unit{color:var(--v3-muted)}
+body .performance-dashboard .pro-network-plot{height:210px;background:none;border:0;border-radius:0}
+body .performance-dashboard .pro-network-note,body .performance-dashboard .pro-x-axis{color:var(--v3-muted);font-size:10px;line-height:1.6}
+body .performance-dashboard .pro-link-strip{border:0;border-top:1px solid var(--v3-line);background:none;border-radius:0;padding:18px 0}
+body .performance-dashboard .pro-link-strip b{font-family:Manrope,Inter,sans-serif;color:var(--v3-ink)}
+body .performance-dashboard .pro-link-strip small{color:var(--v3-muted);font-size:10px}
+body .performance-dashboard #pro-down-line{stroke:var(--v3-accent)}body .performance-dashboard #pro-up-line{stroke:var(--v3-gold);stroke-dasharray:6 4}
+body .performance-dashboard #pro-down-dot{fill:var(--v3-accent)}body .performance-dashboard #pro-up-dot{fill:var(--v3-gold)}
+body .performance-dashboard #pro-download-fill stop{stop-color:var(--v3-accent)}body .performance-dashboard #pro-upload-fill stop{stop-color:var(--v3-gold)}
+body .performance-dashboard .pro-rates>div:first-child i{background:var(--v3-accent)}body .performance-dashboard .pro-rates>div:nth-child(2) i{background:var(--v3-gold)}
+body .performance-dashboard :is(.perf-detail,.perf-process-card,.network-quality-card){border:1px solid var(--v3-line);border-radius:8px;background:var(--v3-surface);box-shadow:none;padding:20px;color:var(--v3-ink)}
+body .performance-dashboard .perf-detail h3{color:var(--v3-gold);font-size:13px;font-weight:700;letter-spacing:.03em}
+body .performance-dashboard .perf-detail dl{font-size:11px;line-height:1.5}
+body .performance-dashboard :is(.perf-detail p,.perf-footnote,.perf-process-card p){color:var(--v3-muted);font-size:10px;line-height:1.7}
 #gestorpeep-dashboard{color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent)}
 html.tv-mode header{grid-template-columns:minmax(108px,1fr) auto auto}
 html.tv-mode header .nav{padding-inline:9px}
 @media(max-width:1100px){html.tv-mode .peep-brand-art.original-lettering{width:150px;height:44px}}
-@media(prefers-reduced-motion:no-preference){:is(.channel-hero,.perf-header,.ambient-hero){animation:panel-enter .32s ease-out both}@keyframes panel-enter{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}}
-@media(max-width:600px){:is(.channel-hero,.perf-header,.ambient-hero){padding:16px!important}}
+@media(max-width:700px){body .channel-dashboard #channel-stats-result,body .performance-dashboard .perf-gauge-grid{grid-template-columns:1fr 1fr;gap:20px}body .channel-dashboard .channel-kpis{grid-column:1/-1;grid-row:auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}body .channel-dashboard .channel-kpi{padding:12px!important;margin:0!important;border:0;border-top:2px solid var(--v3-gold)!important}body .channel-dashboard .channel-kpi strong,body .channel-dashboard .channel-kpi.views strong{font-size:28px}body .channel-dashboard .channel-history,body .channel-dashboard .channel-observed,body .channel-dashboard .channel-ranking{grid-column:1/-1;grid-row:auto}body .performance-dashboard .perf-network-hero{grid-column:1/-1;grid-row:1}body .performance-dashboard .perf-gauge:not(.perf-network-hero){grid-column:auto}body .performance-dashboard .perf-network-hero .pro-network-plot{height:190px}body .channel-dashboard #channel-ranking-list{grid-template-columns:1fr}}
+@media(max-width:440px){body .channel-dashboard .channel-kpis{grid-template-columns:1fr}body .channel-dashboard .channel-kpi{padding:15px 0!important}body .channel-dashboard .channel-kpi strong,body .channel-dashboard .channel-kpi.views strong{font-size:35px}body .performance-dashboard .perf-gauge-grid{grid-template-columns:1fr}body .performance-dashboard .perf-dial>strong{font-size:52px}body .channel-dashboard .channel-snapshot-grid{grid-template-columns:1fr 1fr}}
+@media(prefers-reduced-motion:no-preference){body :is(.channel-hero,.perf-header){animation:v3-reveal .3s ease-out both}@keyframes v3-reveal{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}}
+/* Ambiente follows the same typography and chart surfaces; its weather motion remains local. */
+body #ambient-dashboard.amb-next{--amb-surface:var(--v3-surface);--amb-ink:var(--v3-ink);--amb-muted:var(--v3-muted);--amb-line:var(--v3-line);--amb-cyan:var(--v3-accent);--amb-gold:var(--v3-gold)}
+body .amb-next .amb-header{padding-bottom:20px;border-bottom:1px solid var(--v3-line)}
+body .amb-next .amb-heading>.eyebrow{color:var(--v3-gold)}
+body .amb-next .amb-heading #ambient-title{font:800 clamp(27px,3vw,48px)/1.08 Manrope,Inter,sans-serif;letter-spacing:-.035em}
+body .amb-next :is(.amb-weather-card,.amb-conditions-card,.market-card,.amb-market,.living-market,.utility){border:1px solid var(--v3-line);border-radius:8px;box-shadow:none}
+body .amb-next :is(.amb-conditions-card,.market-card,.amb-market,.living-market){background:var(--v3-surface);color:var(--v3-ink)}
+body .amb-next .market-price{font-family:Manrope,Inter,sans-serif;font-weight:800;color:var(--v3-ink);letter-spacing:-.045em}
+body .amb-next .market-top{color:var(--v3-muted)}
+body .amb-next .market-source{color:var(--v3-muted);font-size:10px}
