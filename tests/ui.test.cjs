@@ -412,3 +412,15 @@ test('channel remote navigation leaves the biography and reaches every lower rea
   assert.equal(d.activeElement,summary);bio.open=true;press(w,d,'ArrowDown');assert.equal(d.activeElement,hiddenParagraph,'An expanded biography remains readable');press(w,d,'ArrowUp');assert.equal(d.activeElement,summary);assert.deepEqual(errors,[]);
  }finally{w.close()}
 });
+test('emulator page is self-contained, labels its data source and never inlines code',()=>{
+ const html=fs.readFileSync(path.join(root,'emulator.html'),'utf8'),js=fs.readFileSync(path.join(root,'emulator.js'),'utf8'),css=fs.readFileSync(path.join(root,'emulator.css'),'utf8');
+ const csp=/Content-Security-Policy" content="([^"]+)"/.exec(html)[1];
+ assert.equal(csp.includes("'unsafe-inline'"),false);assert.match(csp,/script-src 'self'/);assert.match(csp,/frame-src 'self'/);
+ assert.equal(/<script(?![^>]*\bsrc=)/.test(html),false,'No inline scripts');assert.equal(/\sstyle="/.test(html),false,'No inline styles');assert.equal(/\son[a-z]+="/.test(html),false,'No inline handlers');
+ for(const [,file] of html.matchAll(/(?:src|href)="((?!https:)[^"#?]+\.(?:js|css|png))"/g))assert.ok(fs.existsSync(path.join(root,file)),file+' must exist');
+ for(const key of ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter','Back','Home'])assert.ok(html.includes('data-key="'+key+'"'),key+' key on the remote');
+ for(const page of ['home','apps','ambient','performance','channel','themes'])assert.ok(html.includes('data-go="'+page+'"'));
+ assert.match(js,/api\/health/);assert.match(js,/demo\/studio\.html\?tv=1/);assert.match(js,/index\.html\?tv=1/);
+ assert.match(js,/dados fictícios/,'Demo source is labelled as fictional');assert.match(js,/WIDTH=960,HEIGHT=540/);
+ assert.match(css,/prefers-reduced-motion/);
+});

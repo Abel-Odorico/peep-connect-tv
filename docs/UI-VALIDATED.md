@@ -49,3 +49,22 @@ Sinal (RSSI), enlace (Rx/Tx) e tráfego em uso agora acompanham a telemetria
 enquanto o diálogo está aberto, com a idade da leitura. Tráfego é do aparelho
 inteiro e, durante o teste, inclui a própria medição; nunca preenche a
 velocidade testada.
+
+## Emulador (`dist/emulator.html`)
+
+Moldura de TV com a interface real em 960 × 540 px CSS e controle remoto na
+tela. A fonte é detectada: `api/health` respondendo → dados reais do serviço
+local (`index.html?tv=1`); senão a demo fictícia (`../demo/studio.html`), sempre
+identificada no topo; sem nenhuma das duas, mostra o motivo. Roda em modo
+navegador: sem ponte Android, sem lista de apps instalados e sem medir o
+desempenho da TV. Não acrescentar código inline (CSP `script-src 'self'`).
+
+## Revisão de layout 0.18.3 (Chromium 960 × 540)
+
+- Cabeçalho: com rótulos de texto o logo de 210 px invadia o menu; agora cabe
+  na própria coluna. No modo ícones o tamanho anterior foi mantido.
+- Canal: a área sob a linha do gráfico ganhava contorno branco do SVG genérico.
+- Ambiente: o card da Bolsa reservava a faixa do gráfico mesmo sem histórico e
+  desalinhava dos outros dois.
+- YouTube (home): "Gerenciar canais" e "Atualizar vídeos" agrupados à direita.
+

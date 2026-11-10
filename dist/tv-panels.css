@@ -103,3 +103,5 @@ body .amb-next :is(.amb-conditions-card,.market-card,.amb-market,.living-market)
 body .amb-next .market-price{font-family:Manrope,Inter,sans-serif;font-weight:800;color:var(--v3-ink);letter-spacing:-.045em}
 body .amb-next .market-top{color:var(--v3-muted)}
 body .amb-next .market-source{color:var(--v3-muted);font-size:10px}
+/* With text labels the header has no spare room: keep the lettering inside its own column instead of over the menu. */
+@media(max-width:1100px){html.tv-mode body:not([data-navigation=icons]) .peep-brand-art.original-lettering img{width:100%;height:100%}}

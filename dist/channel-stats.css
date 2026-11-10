@@ -60,3 +60,5 @@ html.tv-mode .channel-dashboard{gap:14px;margin:12px 0 26px}html.tv-mode .channe
 html.tv-mode .channel-observed>div{padding:9px 15px}html.tv-mode .channel-observed strong{font-size:20px}html.tv-mode .channel-observed>p{padding:7px 15px}html.tv-mode .channel-snapshot-grid article{min-height:97px;padding:13px}
 
 .channel-reading-stop:focus-visible,.channel-dashboard summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:8px;scroll-margin-block:24px}
+/* The area under the trend line is a fill only; generic SVG strokes must not outline it. */
+#channel-history-fill{stroke:none}
