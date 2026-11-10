@@ -21,7 +21,10 @@ function refreshInstalledApps(){
   const known=originals.get(id);
   const name=typeof entry.name==='string'&&entry.name.trim()?entry.name.trim().slice(0,80):entry.package;
   const icon=typeof entry.icon==='string'&&/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(entry.icon)&&entry.icon.length<600000?entry.icon:'';
-  result.push({id,packageName:entry.package,name,description:known?.description||'Aplicativo instalado nesta TV.',color:known?.color||'#84c8d8',nativeIcon:!!icon&&!known?.officialArtwork,nativeBanner:!!entry.banner&&!known?.officialArtwork,officialArtwork:!!known?.officialArtwork,wordmark:!!known?.wordmark,artBackground:known?.artBackground,fallbackIcon:icon,logo:known?.officialArtwork?known.logo:icon?'<span class="app-artwork"><img class="native-app-icon" src="'+icon+'" alt="" decoding="async"></span>':known?.logo||'<span class="native-app-placeholder">▣</span>'});
+  // Android reports the encoded art's true ratio and, when opaque at the edges, its edge colour.
+  const ratio=Number.isFinite(entry.ratio)&&entry.ratio>.2&&entry.ratio<8?entry.ratio:0;
+  const fill=typeof entry.fill==='string'&&/^#[0-9a-f]{6}$/i.test(entry.fill)?entry.fill:'';
+  result.push({id,artRatio:ratio,artFill:fill,packageName:entry.package,name,description:known?.description||'Aplicativo instalado nesta TV.',color:known?.color||'#84c8d8',nativeIcon:!!icon&&!known?.officialArtwork,nativeBanner:!!entry.banner&&!known?.officialArtwork,officialArtwork:!!known?.officialArtwork,wordmark:!!known?.wordmark,artBackground:known?.artBackground,fallbackIcon:icon,logo:known?.officialArtwork?known.logo:icon?'<span class="app-artwork"><img class="native-app-icon" src="'+icon+'" alt="" decoding="async"></span>':known?.logo||'<span class="native-app-placeholder">▣</span>'});
  }
  if(!result.length)return;
  result.sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));

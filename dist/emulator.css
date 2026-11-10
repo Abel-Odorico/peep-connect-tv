@@ -1,0 +1,138 @@
+/* Peep Connect TV emulator: a studio around the real interface. The TV screen is always 960 × 540 CSS px. */
+:root{
+ --emu-bg:#05070c;--emu-ink:#f3f5fa;--emu-muted:#98a4b8;--emu-line:#ffffff1a;--emu-glass:#ffffff0c;
+ --emu-teal:#35d6d2;--emu-amber:#ff8a4c;--emu-violet:#8f7bff;--emu-good:#5fe3a4;--emu-warn:#ffc567;
+ --emu-scale:1;--emu-radius:22px;
+ color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;min-height:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:14px;padding:16px clamp(16px,2.4vw,34px) 12px;background:var(--emu-bg);color:var(--emu-ink);font:500 13px/1.45 'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+:focus-visible{outline:2px solid var(--emu-teal);outline-offset:3px}
+[hidden]{display:none!important}
+
+/* Backdrop: three slow colour fields over a fine grid. */
+.emu-backdrop{position:fixed;inset:0;z-index:-1;overflow:hidden;background:
+ linear-gradient(#ffffff05 1px,transparent 1px) 0 0/100% 44px,
+ linear-gradient(90deg,#ffffff05 1px,transparent 1px) 0 0/44px 100%,
+ radial-gradient(120% 90% at 50% 110%,#0d1322 0,var(--emu-bg) 62%)}
+.emu-backdrop:after{content:'';position:absolute;inset:0;background:radial-gradient(70% 60% at 50% 45%,transparent 0,#05070cd9 100%)}
+.emu-backdrop i{position:absolute;width:56vmax;height:56vmax;border-radius:50%;filter:blur(90px);opacity:.34;animation:emu-drift 26s ease-in-out infinite alternate}
+.emu-backdrop i:nth-child(1){left:-18vmax;top:-22vmax;background:radial-gradient(circle,var(--emu-teal),transparent 62%)}
+.emu-backdrop i:nth-child(2){right:-20vmax;bottom:-26vmax;background:radial-gradient(circle,var(--emu-amber),transparent 62%);animation-duration:32s;animation-direction:alternate-reverse;opacity:.26}
+.emu-backdrop i:nth-child(3){left:38%;top:44%;width:38vmax;height:38vmax;background:radial-gradient(circle,var(--emu-violet),transparent 64%);opacity:.2;animation-duration:38s}
+@keyframes emu-drift{to{transform:translate3d(5vmax,3vmax,0) scale(1.08)}}
+
+/* Top bar */
+.emu-top{display:flex;align-items:center;gap:14px;min-width:0}
+.emu-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;flex-shrink:0;border-radius:12px}
+.emu-brand img{display:block;height:38px;width:auto}
+.emu-brand span{font:700 11px/1 'Manrope',sans-serif;letter-spacing:.24em;text-transform:uppercase;padding:7px 11px 7px 13px;border-radius:999px;color:#06121a;background:linear-gradient(120deg,var(--emu-teal),#9cf3e4 60%,var(--emu-amber));box-shadow:0 6px 22px #35d6d238}
+.emu-pills{display:flex;gap:8px;margin-left:auto;min-width:0}
+.emu-pill:not(.emu-source){flex-shrink:0}
+.emu-pill{display:flex;align-items:baseline;gap:7px;padding:8px 13px;border-radius:999px;border:1px solid var(--emu-line);background:var(--emu-glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);white-space:nowrap;min-width:0}
+.emu-pill b{font:700 12px/1 'Manrope',sans-serif;letter-spacing:.01em}
+.emu-pill small{font-size:11px;color:var(--emu-muted);overflow:hidden;text-overflow:ellipsis}
+.emu-source{align-items:center}
+.emu-source i{width:8px;height:8px;border-radius:50%;background:var(--emu-muted);flex-shrink:0;box-shadow:0 0 0 0 currentColor}
+.emu-source[data-state=checking] i{animation:emu-pulse 1.1s ease-in-out infinite}
+.emu-source[data-state=real]{border-color:#5fe3a455;background:#5fe3a414}
+.emu-source[data-state=real] i{background:var(--emu-good);box-shadow:0 0 12px var(--emu-good)}
+.emu-source[data-state=demo]{border-color:#ffc56755;background:#ffc56714}
+.emu-source[data-state=demo] i{background:var(--emu-warn);box-shadow:0 0 12px var(--emu-warn)}
+.emu-source[data-state=none]{border-color:#ff7b7b55;background:#ff7b7b14}
+.emu-source[data-state=none] i{background:#ff7b7b}
+@keyframes emu-pulse{50%{opacity:.25;transform:scale(.7)}}
+.emu-actions{display:flex;gap:6px;padding:4px;border-radius:999px;border:1px solid var(--emu-line);background:var(--emu-glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);flex-shrink:0}
+.emu-actions button{display:flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;font-size:12px;color:#d5dcea;transition:background .18s,color .18s,transform .18s}
+.emu-actions button:hover{background:#ffffff14;color:#fff}
+.emu-actions button:active{transform:scale(.96)}
+.emu-actions button[aria-pressed=true]{background:#35d6d224;color:#aef4ee}
+.emu-actions svg{width:15px;height:15px}
+
+/* Stage */
+.emu-stage{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:clamp(16px,2.6vw,40px);align-items:center;min-height:0}
+.emu-tv-slot{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-width:0;min-height:0;height:100%}
+.emu-tv-slot.is-actual{overflow:auto;justify-content:flex-start}
+.emu-tv{position:relative;flex-shrink:0;display:flex;flex-direction:column;align-items:center}
+.emu-glow{position:absolute;inset:-7% -5% 4%;border-radius:40px;background:conic-gradient(from 210deg at 50% 50%,var(--emu-teal),var(--emu-violet),var(--emu-amber),var(--emu-teal));filter:blur(64px);opacity:.3;animation:emu-breathe 9s ease-in-out infinite alternate;pointer-events:none}
+@keyframes emu-breathe{to{opacity:.44;transform:scale(1.03)}}
+.emu-bezel{position:relative;padding:9px 9px 0;border-radius:16px;background:linear-gradient(160deg,#2a2e39,#0b0c11 38%,#14161d);box-shadow:0 0 0 1px #ffffff14,inset 0 1px #ffffff26,0 40px 80px -24px #000,0 18px 36px -18px #000c}
+.emu-screen{position:relative;width:calc(960px*var(--emu-scale));height:calc(540px*var(--emu-scale));border-radius:7px;overflow:hidden;background:#000;box-shadow:inset 0 0 0 1px #000}
+.emu-screen:after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(118deg,#ffffff0d 0,transparent 26%);border-radius:inherit}
+.emu-screen iframe{display:block;width:960px;height:540px;border:0;background:#000;transform:scale(var(--emu-scale));transform-origin:0 0}
+.emu-chin{display:flex;align-items:center;justify-content:center;gap:9px;height:22px;font:700 7.5px/1 'Manrope',sans-serif;letter-spacing:.3em;color:#6d7689}
+.emu-led{width:5px;height:5px;border-radius:50%;background:#3b4252;transition:background .2s,box-shadow .2s}
+.emu-led.on{background:var(--emu-good);box-shadow:0 0 10px var(--emu-good)}
+.emu-led.blink{background:#fff;box-shadow:0 0 12px #fff}
+.emu-stand{display:flex;justify-content:space-between;width:58%;height:20px}
+.emu-stand i{width:74px;height:100%;background:linear-gradient(#1c1f28,#0c0d12);clip-path:polygon(34% 0,66% 0,100% 100%,0 100%);box-shadow:inset 0 1px #ffffff1c}
+.emu-safe-area{position:absolute;inset:5%;border:1px dashed #35d6d2cc;border-radius:4px;pointer-events:none;box-shadow:0 0 0 2000px #35d6d20f}
+.emu-safe-area span{position:absolute;left:8px;top:6px;font:700 9px/1 'Manrope',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#aef4ee;background:#05070ccc;padding:4px 7px;border-radius:5px}
+.emu-focus-ring{position:absolute;border:2px solid var(--emu-teal);border-radius:8px;pointer-events:none;box-shadow:0 0 0 3px #35d6d233,0 0 22px #35d6d266;transition:left .14s ease,top .14s ease,width .14s ease,height .14s ease}
+.emu-boot{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:radial-gradient(60% 60% at 50% 45%,#101726,#04060a);transition:opacity .5s ease,visibility .5s;padding:24px;text-align:center}
+.emu-boot.done{opacity:0;visibility:hidden}
+.emu-boot img{width:min(46%,260px);height:auto;animation:emu-rise .9s ease both}
+.emu-boot p{margin:0;font-size:12px;color:var(--emu-muted);max-width:420px}
+.emu-boot-bar{width:120px;height:3px;border-radius:3px;background:#ffffff14;overflow:hidden}
+.emu-boot-bar i{display:block;width:40%;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--emu-teal),var(--emu-amber));animation:emu-load 1.2s ease-in-out infinite}
+.emu-boot.failed .emu-boot-bar{display:none}
+@keyframes emu-load{from{transform:translateX(-110%)}to{transform:translateX(260%)}}
+@keyframes emu-rise{from{opacity:0;transform:translateY(8px)}}
+.emu-readout{display:flex;align-items:baseline;gap:10px;margin:0;padding:7px 14px;border-radius:999px;border:1px solid var(--emu-line);background:var(--emu-glass);max-width:min(100%,640px);min-width:0;flex-shrink:0}
+.emu-readout-tag{font:700 9px/1 'Manrope',sans-serif;letter-spacing:.2em;color:var(--emu-teal)}
+.emu-readout b{font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.emu-readout small{font-size:11px;color:var(--emu-muted);white-space:nowrap}
+
+/* Remote */
+.emu-remote{width:196px;padding:16px 16px 18px;border-radius:44px;border:1px solid #ffffff1f;background:linear-gradient(170deg,#1d212c,#0c0e14 46%,#11131a);box-shadow:inset 0 1px #ffffff2b,inset 0 -18px 30px -18px #000,0 34px 60px -26px #000,0 0 0 1px #000;display:flex;flex-direction:column;align-items:center;gap:13px;max-height:100%;overflow:auto;scrollbar-width:none}
+.emu-remote::-webkit-scrollbar{display:none}
+.emu-remote-head{display:flex;align-items:center;gap:8px;font:700 8px/1 'Manrope',sans-serif;letter-spacing:.32em;color:#6d7689}
+.emu-ir{width:6px;height:6px;border-radius:50%;background:#3b4252;transition:background .12s,box-shadow .12s}
+.emu-ir.on{background:var(--emu-amber);box-shadow:0 0 12px var(--emu-amber)}
+.emu-remote-row{display:flex;justify-content:space-between;width:100%;padding:0 6px}
+.emu-key{display:grid;place-items:center;color:#dfe5f1;transition:transform .09s ease,background .15s,box-shadow .15s,color .15s}
+.emu-key:active,.emu-key.pressed{transform:scale(.93)}
+.emu-round{width:46px;height:46px;border-radius:50%;background:linear-gradient(160deg,#2b303d,#151821);box-shadow:inset 0 1px #ffffff26,0 6px 12px -6px #000}
+.emu-round:hover{color:#fff;background:linear-gradient(160deg,#343a49,#191c27)}
+.emu-round.pressed{color:var(--emu-teal);box-shadow:inset 0 1px #ffffff26,0 0 18px #35d6d255}
+.emu-dpad{position:relative;width:164px;height:164px;border-radius:50%;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);background:radial-gradient(circle at 50% 30%,#2c3140,#12141b 70%);box-shadow:inset 0 1px #ffffff2e,inset 0 -10px 18px -10px #000,0 12px 22px -12px #000}
+.emu-dir{border-radius:14px;color:#aeb8ca}
+.emu-dir svg{width:22px;height:22px;stroke-width:2.2}
+.emu-dir:hover{color:#fff}
+.emu-dir.pressed{color:var(--emu-teal)}
+.emu-dir.up{grid-area:1/2}.emu-dir.left{grid-area:2/1}.emu-dir.right{grid-area:2/3}.emu-dir.down{grid-area:3/2}
+.emu-ok{grid-area:2/2;margin:-7px;border-radius:50%;font:800 13px/1 'Manrope',sans-serif;letter-spacing:.08em;color:#06121a;background:linear-gradient(150deg,#9cf3e4,var(--emu-teal));box-shadow:inset 0 1px #ffffff99,0 0 0 5px #0a0c11,0 8px 22px -6px #35d6d2aa}
+.emu-ok:hover{filter:brightness(1.08)}
+.emu-ok.pressed{box-shadow:inset 0 1px #ffffff99,0 0 0 5px #0a0c11,0 0 28px #35d6d2}
+.emu-remote-label{margin:4px 0 -4px;font:700 8px/1 'Manrope',sans-serif;letter-spacing:.3em;color:#6d7689}
+.emu-shortcuts{display:grid;grid-template-columns:1fr 1fr;gap:7px;width:100%}
+.emu-chip{padding:9px 6px;border-radius:13px;font-size:11.5px;font-weight:600;color:#cfd7e6;background:#ffffff0d;border:1px solid #ffffff14;transition:background .15s,border-color .15s,color .15s,transform .09s}
+.emu-chip:hover{background:#ffffff18;color:#fff}
+.emu-chip:active{transform:scale(.95)}
+.emu-chip.current{border-color:#35d6d277;background:#35d6d21f;color:#aef4ee}
+.emu-remote-hint{margin:0;font-size:10.5px;line-height:1.45;text-align:center;color:#7b8598}
+
+.emu-foot{min-width:0}
+.emu-foot p{margin:0;font-size:11px;color:#7b8598;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Narrow windows: the remote lies down under the TV. */
+@media(max-width:860px){
+ body{overflow:auto;grid-template-rows:auto auto auto}
+ .emu-top{flex-wrap:wrap}
+ .emu-pills{order:3;width:100%;margin:0;overflow-x:auto;scrollbar-width:none}
+ .emu-actions{margin-left:auto}
+ .emu-actions span{display:none}
+ .emu-stage{grid-template-columns:minmax(0,1fr);justify-items:center}
+ .emu-tv-slot{height:auto;width:100%}
+ .emu-remote{width:100%;max-width:520px;border-radius:30px;flex-direction:row;flex-wrap:wrap;justify-content:center;gap:16px 22px}
+ .emu-remote-head,.emu-remote-label,.emu-remote-hint{display:none}
+ .emu-remote-row{flex-direction:column;justify-content:center;gap:14px;width:auto;padding:0}
+ .emu-shortcuts{width:100%;grid-template-columns:repeat(3,1fr)}
+ .emu-foot p{white-space:normal}
+}
+@media(max-width:1180px){.emu-pill:not(.emu-source) small{display:none}}
+@media(max-height:620px) and (min-width:861px){.emu-remote{gap:9px;padding:12px 14px}.emu-dpad{width:140px;height:140px}.emu-remote-hint{display:none}.emu-round{width:40px;height:40px}}
+@media(prefers-reduced-motion:reduce){.emu-backdrop i,.emu-glow,.emu-boot img,.emu-source i{animation:none}.emu-focus-ring,.emu-key{transition:none}}

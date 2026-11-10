@@ -65,3 +65,25 @@ class ChannelStatsTests(unittest.TestCase):
         with patch.object(self.yt, 'api_key', return_value='private'), patch.object(self.yt, 'request', return_value={'items': []}), self.assertRaises(YouTubeError) as error:
             self.yt.channel_stats('@test')
         self.assertEqual(error.exception.status, 404)
+
+    def test_manual_refresh_bypasses_cache_with_minimum_interval(self):
+        import time
+        with patch.object(self.yt, 'api_key', return_value='private'), patch.object(self.yt, 'request', side_effect=self.request):
+            first = self.yt.channel_stats('@test')
+            self.assertFalse(first['cached'])
+            self.assertEqual(len(self.calls), 3)
+            # Immediate manual refresh is rate limited and served from cache.
+            limited = self.yt.channel_stats('@test', force=True)
+            self.assertTrue(limited['cached'])
+            self.assertTrue(limited['refreshLimited'])
+            self.assertEqual(len(self.calls), 3)
+            # After the minimum interval a manual refresh queries the source again.
+            for entry in self.yt.channel_cache.values():
+                entry['at'] -= 31
+            refreshed = self.yt.channel_stats('@test', force=True)
+            self.assertFalse(refreshed['cached'])
+            self.assertFalse(refreshed['refreshLimited'])
+            self.assertEqual(len(self.calls), 6)
+            # A plain read inside the 15-minute window still uses the cache.
+            self.assertTrue(self.yt.channel_stats('@test')['cached'])
+            self.assertEqual(len(self.calls), 6)

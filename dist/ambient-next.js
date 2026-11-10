@@ -63,7 +63,7 @@
    range.hidden=!available;
    if(available){const format=value=>value.toLocaleString('pt-BR',{minimumFractionDigits:id==='ibov'?0:4,maximumFractionDigits:id==='ibov'?0:4})+(id==='ibov'?' pts':id==='usd'?' BRL':' USD');range.replaceChildren();for(const [label,value]of [['Mín',Math.min(...values)],['Máx',Math.max(...values)]]){const part=document.createElement('span');part.textContent=label+' '+format(value);range.append(part)}range.setAttribute('aria-label','Faixa do histórico exibido')}else range.replaceChildren();
    const caption=visual.querySelector('small');
-   if(id==='ibov')caption.textContent=available?count+' pregões · Yahoo Finance':'Histórico indisponível';
+   if(id==='ibov')caption.textContent=available?count+' pregões · Yahoo Finance':'Sem histórico disponível';
    else if(!available)caption.textContent=item?.ok?'Aguardando a próxima amostra da fonte':'Sem histórico disponível';
   }
  }

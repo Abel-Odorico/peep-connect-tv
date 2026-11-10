@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#05070c">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self'; connect-src 'self'; frame-src 'self'">
+<title>Peep Connect TV · Emulador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="emulator.css">
+<script src="emulator.js" defer></script>
+</head>
+<body>
+<div class="emu-backdrop" aria-hidden="true"><i></i><i></i><i></i></div>
+
+<header class="emu-top">
+ <a class="emu-brand" href="./" aria-label="Peep Connect, abrir a interface sem moldura">
+  <img src="assets/peep-connect-dark.png" alt="Peep Connect" width="152" height="38">
+  <span>Emulador</span>
+ </a>
+ <div class="emu-pills">
+  <span class="emu-pill emu-source" id="emu-source" data-state="checking" role="status"><i aria-hidden="true"></i><b id="emu-source-title">Verificando a fonte</b><small id="emu-source-detail">procurando o serviço local</small></span>
+  <span class="emu-pill" title="Viewport CSS da Konka: painel 1920 × 1080 com densidade 2"><b>960 × 540</b><small>px CSS</small></span>
+  <span class="emu-pill"><b id="emu-scale">100%</b><small>escala</small></span>
+ </div>
+ <div class="emu-actions">
+  <button type="button" id="emu-safe" aria-pressed="false" title="Mostrar a margem de segurança de 5%">
+   <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><rect x="6.5" y="8" width="11" height="8" rx="1" stroke-dasharray="2 2"/></svg><span>Área segura</span>
+  </button>
+  <button type="button" id="emu-fit" aria-pressed="true" title="Alternar entre ajustar à janela e tamanho real em px CSS">
+   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span id="emu-fit-label">Ajustar</span>
+  </button>
+  <button type="button" id="emu-reload" title="Recarregar a interface da TV">
+   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9M20 4v5h-5"/></svg><span>Recarregar</span>
+  </button>
+  <button type="button" id="emu-full" title="Emulador em tela cheia">
+   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg><span>Tela cheia</span>
+  </button>
+ </div>
+</header>
+
+<main class="emu-stage">
+ <section class="emu-tv-slot" id="emu-slot" aria-label="Televisor emulado">
+  <div class="emu-tv" id="emu-tv">
+   <div class="emu-glow" aria-hidden="true"></div>
+   <div class="emu-bezel">
+    <div class="emu-screen" id="emu-screen">
+     <iframe id="emu-frame" title="Interface Peep Connect TV em 960 por 540" allow="fullscreen"></iframe>
+     <div class="emu-safe-area" id="emu-safe-area" hidden aria-hidden="true"><span>margem de segurança 5%</span></div>
+     <div class="emu-focus-ring" id="emu-focus-ring" hidden aria-hidden="true"></div>
+     <div class="emu-boot" id="emu-boot">
+      <img src="assets/peep-connect-dark.png" alt="" width="240" height="60">
+      <p id="emu-boot-text">Ligando a tela…</p>
+      <span class="emu-boot-bar" aria-hidden="true"><i></i></span>
+     </div>
+    </div>
+    <div class="emu-chin" aria-hidden="true"><i class="emu-led" id="emu-led"></i><span>PEEP CONNECT TV · 1080p</span></div>
+   </div>
+   <div class="emu-stand" aria-hidden="true"><i></i><i></i></div>
+  </div>
+  <p class="emu-readout" role="status"><span class="emu-readout-tag">FOCO</span><b id="emu-focus-name">aguardando a interface</b><small id="emu-focus-kind"></small></p>
+ </section>
+
+ <aside class="emu-remote" aria-label="Controle remoto">
+  <div class="emu-remote-head"><i class="emu-ir" id="emu-ir" aria-hidden="true"></i><span>CONTROLE</span></div>
+  <div class="emu-remote-row">
+   <button type="button" class="emu-key emu-round" data-key="Back" aria-label="Voltar" title="Voltar · Esc">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6 4 12l6 6M4 12h11a5 5 0 0 1 0 10h-2"/></svg>
+   </button>
+   <button type="button" class="emu-key emu-round" data-key="Home" aria-label="Início" title="Início · H">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8M5.5 9.5V20h13V9.5"/></svg>
+   </button>
+  </div>
+  <div class="emu-dpad" role="group" aria-label="Direcional">
+   <button type="button" class="emu-key emu-dir up" data-key="ArrowUp" aria-label="Para cima"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 14 6-6 6 6"/></svg></button>
+   <button type="button" class="emu-key emu-dir left" data-key="ArrowLeft" aria-label="Para a esquerda"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
+   <button type="button" class="emu-key emu-ok" data-key="Enter" aria-label="OK, selecionar">OK</button>
+   <button type="button" class="emu-key emu-dir right" data-key="ArrowRight" aria-label="Para a direita"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
+   <button type="button" class="emu-key emu-dir down" data-key="ArrowDown" aria-label="Para baixo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 10 6 6 6-6"/></svg></button>
+  </div>
+  <p class="emu-remote-label">ATALHOS</p>
+  <div class="emu-shortcuts">
+   <button type="button" class="emu-chip" data-go="home">Início</button>
+   <button type="button" class="emu-chip" data-go="apps">Apps</button>
+   <button type="button" class="emu-chip" data-go="ambient">Ambiente</button>
+   <button type="button" class="emu-chip" data-go="performance">Performance</button>
+   <button type="button" class="emu-chip" data-go="channel">Canal</button>
+   <button type="button" class="emu-chip" data-go="themes">Tema</button>
+  </div>
+  <p class="emu-remote-hint">No teclado: setas navegam, Enter confirma, Esc volta.</p>
+ </aside>
+</main>
+
+<footer class="emu-foot">
+ <p id="emu-note">O emulador reproduz o layout e a navegação por controle no navegador. Não mede o desempenho da TV, e a lista de apps instalados só existe no aparelho.</p>
+</footer>
+</body>
+</html>

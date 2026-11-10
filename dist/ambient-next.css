@@ -46,3 +46,5 @@ body[data-theme=adl-day] .amb-market-heading,body.horizon-light .amb-market-head
 .amb-next .market-visual[data-history=false]>small{max-width:none;border-left:2px solid var(--quote);padding-left:8px}
 .amb-next .amb-markets .market-card:focus-visible{outline:3px solid var(--quote);outline-offset:4px;box-shadow:inset 0 0 0 1px var(--quote)}
 @media(min-width:1250px){.amb-next .amb-chart-range{font-size:10px}.amb-next .market-visual[data-history=false]{min-height:45px}}
+/* A chart without history leaves no empty band, so the three market cards keep the same rhythm. */
+.amb-next .market-card svg[hidden]{display:none!important}

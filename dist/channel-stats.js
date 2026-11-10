@@ -50,9 +50,9 @@
   line.setAttribute('points',points.map(p=>p.join(',')).join(' '));fill.setAttribute('d',available.length>1?'M12 142L'+points.map(p=>p.join(' ')).join('L')+'L588 142Z':'');dot.setAttribute('cx',points.at(-1)[0]);dot.setAttribute('cy',points.at(-1)[1]);dot.setAttribute('visibility','visible');
   svg.setAttribute('aria-label',`${labels[metric]} acumulados em ${available.length} consultas observadas; de ${number(available[0][metric])} a ${number(available.at(-1)[metric])}`);
   el('channel-history-start').textContent=when(available[0].at*1000);el('channel-history-end').textContent=when(available.at(-1).at*1000);
-  el('channel-history-note').textContent=available.length<2?'Primeira amostra registrada. Uma nova consulta à fonte após 15 minutos permitirá comparar os totais.':`Variação observada desde ${when(available[0].at*1000)}: ${delta(available[0],available.at(-1),metric)} ${labels[metric]}. Amostras salvas somente neste dispositivo.`;
+  el('channel-history-note').textContent=available.length<2?'Primeira amostra registrada. Uma nova consulta à fonte (botão Atualizar ou após 15 minutos) permitirá comparar os totais.':`Variação observada desde ${when(available[0].at*1000)}: ${delta(available[0],available.at(-1),metric)} ${labels[metric]}. Amostras salvas somente neste dispositivo.`;
  }
- function paint(data){state.data=data;state.key=data.id;const account=(youtubeState.accounts||[]).find(a=>a.id===data.id);
+ function paint(data,forced=false){state.data=data;state.key=data.id;const account=(youtubeState.accounts||[]).find(a=>a.id===data.id);
   el('channel-title').textContent=data.title||'Canal do YouTube';el('channel-handle').textContent=data.handle||data.id;
   const created=el('channel-created'),createdDate=new Date(data.createdAt);created.hidden=!data.createdAt||!Number.isFinite(createdDate.getTime());if(!created.hidden)created.textContent='No YouTube desde '+createdDate.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
   const bio=el('channel-bio');bio.hidden=!data.description?.trim();el('channel-bio-text').textContent=data.description?.slice(0,1200)||'';
@@ -71,12 +71,12 @@
   el('channel-ranking-list').innerHTML=top.length?top.map((v,i)=>`<div class="channel-rank"><span>${String(i+1).padStart(2,'0')}</span><div><strong>${esc(v.title)}</strong><i><b style="width:${Math.max(1,Math.min(100,(Number(v.views)||0)/max*100))}%"></b></i></div><em>${number(v.views)}</em></div>`).join(''):'<p>Nenhum vídeo público recente retornado.</p>';
   el('channel-video-list').innerHTML=videos.length?videos.map(v=>`<a class="channel-video-row" href="https://www.youtube.com/watch?v=${v.id}" target="_blank" rel="noopener noreferrer" aria-label="Abrir ${esc(v.title)} no YouTube"><img loading="lazy" alt="" src="https://i.ytimg.com/vi/${v.id}/mqdefault.jpg"><span><strong>${esc(v.title)}</strong><small>${v.published&&Number.isFinite(new Date(v.published).getTime())?when(v.published):'Data não informada'} · ${number(v.views)} visualizações${duration(v.duration)?' · '+duration(v.duration):''}</small><span class="channel-video-metrics">${number(v.likes)} curtidas · ${number(v.comments)} comentários</span></span></a>`).join(''):'<p>O YouTube não retornou vídeos públicos recentes para este canal.</p>';
   el('channel-source').textContent=(data.cached?'Cache · ':'')+'Consultado '+new Date(data.at*1000).toLocaleString('pt-BR')+' · '+data.source+(data.partial?' · vídeos incompletos':'');
-  el('channel-stats-status').textContent=(data.cached?'Leitura em cache':'Leitura atualizada')+' · fonte: '+(data.source||'YouTube Data API v3')+' · '+new Date(data.at*1000).toLocaleString('pt-BR')+'. Atualização da fonte a cada 15 minutos.';
+  el('channel-stats-status').textContent=(data.cached?'Leitura em cache':'Leitura atualizada')+' · fonte: '+(data.source||'YouTube Data API v3')+' · '+new Date(data.at*1000).toLocaleString('pt-BR')+'. Atualização da fonte a cada 15 minutos.'+(forced&&data.cached?(data.refreshLimited?' Atualização manual limitada: aguarde '+(data.forceSeconds||30)+' s entre consultas à fonte.':' O serviço no Mac não aceitou atualização imediata; atualize-o para consultar a fonte agora.'):'');
   el('channel-stats-result').hidden=false;
  }
  async function load(id,force=false){if(!id||state.loading)return;if(!force&&state.key===id&&Date.now()-state.requestedAt<900000)return;
   const revision=++state.revision;state.loading=true;el('channel-refresh').disabled=true;el('channel-stats-status').textContent='Consultando dados públicos no YouTube…';
-  try{const data=await localJSON('/api/youtube/channel?channel='+encodeURIComponent(id),45000);if(revision!==state.revision||!data.id||!Array.isArray(data.videos))throw Error('O serviço do canal não retornou dados completos.');paint(data);state.requestedAt=Date.now()}
+  try{const data=await localJSON('/api/youtube/channel?channel='+encodeURIComponent(id)+(force?'&force=1':''),45000);if(revision!==state.revision||!data.id||!Array.isArray(data.videos))throw Error('O serviço do canal não retornou dados completos.');paint(data,force);state.requestedAt=Date.now()}
   catch(error){el('channel-stats-status').textContent=(state.data?'Mantendo os últimos dados visíveis. ':'')+error.message}
   finally{state.loading=false;el('channel-refresh').disabled=false}
  }
