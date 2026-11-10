@@ -103,3 +103,7 @@ body .amb-next :is(.amb-conditions-card,.market-card,.amb-market,.living-market)
 body .amb-next .market-price{font-family:Manrope,Inter,sans-serif;font-weight:800;color:var(--v3-ink);letter-spacing:-.045em}
 body .amb-next .market-top{color:var(--v3-muted)}
 body .amb-next .market-source{color:var(--v3-muted);font-size:10px}
+/* 0.18.3 · Legibilidade no sofá: eixos e legendas dos medidores com no mínimo 10px CSS (20px físicos na Konka). */
+body .performance-dashboard .pro-y-axis{font-size:10px;inset:0 auto 0 -34px}
+body .performance-dashboard .pro-x-axis>span:nth-child(2){font-size:10px;opacity:.85}
+body .performance-dashboard .perf-range{font-size:11px;color:var(--v3-muted,#9fb0bf)}

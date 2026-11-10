@@ -39,9 +39,11 @@
   const text=!saved?'Internet ainda não medida':`${saved.bandwidthAt?'Velocidade '+date(saved.bandwidthAt)+' · ':''}Latência ${date(saved.at)} · ${saved.source==='tv'?'na TV':'neste navegador'}`;
   if($('#quality-updated'))$('#quality-updated').textContent=running?'Medição em andamento…':text;
   if($('#hub-internet-time'))$('#hub-internet-time').textContent=text;
-  if($('#hub-internet-ping'))$('#hub-internet-ping').textContent=valid(saved?.latency)?format(saved.latency)+' ms':'— ms';
-  if($('#hub-internet-speed'))$('#hub-internet-speed').textContent=valid(saved?.downloadMbps)?'↓ '+format(saved.downloadMbps)+' Mb/s':'Velocidade: medir';
-  if($('#pro-internet-result'))$('#pro-internet-result').textContent=valid(saved?.downloadMbps)?'Última velocidade · ↓ '+format(saved.downloadMbps)+' · ↑ '+format(saved.uploadMbps)+' Mb/s · latência '+format(saved.latency)+' ms':valid(saved?.latency)?'Latência testada · '+format(saved.latency)+' ms':'Internet: faça um teste para medir a velocidade';
+  // Resumo: somente valores medidos; ausência aparece como ausência, nunca como zero.
+  const speedParts=[valid(saved?.downloadMbps)?'↓ '+format(saved.downloadMbps):'',valid(saved?.uploadMbps)?'↑ '+format(saved.uploadMbps):''].filter(Boolean);
+  const ping=$('#hub-internet-ping');if(ping){ping.textContent=valid(saved?.latency)?'Latência '+format(saved.latency)+' ms':'';ping.hidden=!ping.textContent}
+  if($('#hub-internet-speed'))$('#hub-internet-speed').textContent=speedParts.length?speedParts.join('  ')+' Mb/s':valid(saved?.latency)?'Somente latência':'Sem teste';
+  if($('#pro-internet-result'))$('#pro-internet-result').textContent=speedParts.length?'Último teste · '+speedParts.join(' · ')+' Mb/s'+(valid(saved?.latency)?' · latência '+format(saved.latency)+' ms':''):valid(saved?.latency)?'Latência testada · '+format(saved.latency)+' ms · velocidade não medida':'Internet ainda não medida · abrir teste manual';
   if($('#quality-latency-verdict'))$('#quality-latency-verdict').textContent=!valid(data?.latency)?'Aguardando medição':data.latency<=50?'Latência baixa':data.latency<=100?'Latência moderada':'Latência alta';
  }
  function buttons(){
@@ -102,7 +104,7 @@
  $('#hub-traffic .hub-caption').textContent='Tráfego em uso · não é a velocidade da internet';
  $('.pro-kicker').textContent='REDE · USO ATUAL';
  $('.pro-network-top h2').textContent='Tráfego, não velocidade.';
- const summary=document.createElement('button');summary.id='hub-internet';summary.className='hub-internet';summary.innerHTML='<span>'+livingIcon('wifi')+'<b>Internet · último teste</b><small id="hub-internet-time"></small></span><strong id="hub-internet-speed">Velocidade: medir</strong><span id="hub-internet-ping">— ms</span><em>Testar conexão ↗</em>';hub.append(summary);summary.onclick=networkPanel;
+ const summary=document.createElement('button');summary.id='hub-internet';summary.className='hub-internet';summary.innerHTML='<span>'+livingIcon('wifi')+'<b>Internet · último teste</b><small id="hub-internet-time"></small></span><strong id="hub-internet-speed">Sem teste</strong><span id="hub-internet-ping" hidden></span><em>Testar conexão ↗</em>';hub.append(summary);summary.onclick=networkPanel;
  const pro=document.createElement('button');pro.id='pro-internet-result';pro.className='pro-internet-result';$('.pro-network-note').before(pro);pro.onclick=networkPanel;
  window.PeepNetwork={open:networkPanel,start:run,cancel,get last(){return saved},get running(){return running}};
  paint();

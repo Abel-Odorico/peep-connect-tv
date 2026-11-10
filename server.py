@@ -214,9 +214,63 @@ def memory_processes():
         return {'processes': sorted(processes, key=lambda x: x['pssKiB'], reverse=True)[:6], 'at': time.time(), 'metric': 'PSS'}
 
 
+STATIC_CACHE = {}
+STATIC_LOCK = threading.Lock()
+COMPRESSIBLE = {'.html', '.js', '.css', '.svg'}
+
+
+def static_entry(file):
+    """Read a dist file once per version; ETag lets the TV revalidate without downloading it again."""
+    stat = file.stat()
+    key = (str(file), stat.st_mtime_ns, stat.st_size)
+    with STATIC_LOCK:
+        entry = STATIC_CACHE.get(str(file))
+        if entry and entry['key'] == key:
+            return entry
+    import gzip
+    import hashlib
+    import mimetypes
+    body = file.read_bytes()
+    entry = {
+        'key': key,
+        'body': body,
+        'gzip': gzip.compress(body, 6, mtime=0) if file.suffix in COMPRESSIBLE and len(body) > 1024 else None,
+        'etag': '"' + hashlib.sha1(body).hexdigest()[:20] + '"',
+        'type': (mimetypes.guess_type(file.name)[0] or 'application/octet-stream') + ('; charset=utf-8' if file.suffix in COMPRESSIBLE else ''),
+    }
+    with STATIC_LOCK:
+        STATIC_CACHE[str(file)] = entry
+    return entry
+
+
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *_):
         pass  # Never log authenticated upstream URLs or raw TV diagnostics.
+
+    def static_response(self, file):
+        entry = static_entry(file)
+        tags = [tag.strip() for tag in (self.headers.get('If-None-Match') or '').split(',')]
+        compressed = entry['gzip'] is not None and 'gzip' in (self.headers.get('Accept-Encoding') or '')
+        if entry['etag'] in tags or '*' in tags:
+            self.send_response(304)
+            self.send_header('ETag', entry['etag'])
+            self.send_header('Cache-Control', 'no-cache')
+            self.end_headers()
+            return
+        body = entry['gzip'] if compressed else entry['body']
+        self.send_response(200)
+        self.send_header('Content-Type', entry['type'])
+        # no-cache keeps every update visible; the ETag avoids re-downloading unchanged files over ADB.
+        self.send_header('Cache-Control', 'no-cache')
+        self.send_header('ETag', entry['etag'])
+        if entry['gzip'] is not None:
+            self.send_header('Vary', 'Accept-Encoding')
+        if compressed:
+            self.send_header('Content-Encoding', 'gzip')
+        self.send_header('X-Content-Type-Options', 'nosniff')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def json_response(self, value, status=200):
         body = json.dumps(value, ensure_ascii=False).encode()
@@ -332,15 +386,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not file.is_relative_to(DIST.resolve()) or not file.is_file() or file.suffix not in {'.html', '.js', '.css', '.svg', '.png', '.jpg', '.webp'}:
                     self.json_response({'error': 'Arquivo não encontrado.'}, 404)
                     return
-                import mimetypes
-                body = file.read_bytes()
-                self.send_response(200)
-                self.send_header('Content-Type', (mimetypes.guess_type(file.name)[0] or 'application/octet-stream') + '; charset=utf-8')
-                self.send_header('Cache-Control', 'no-cache')
-                self.send_header('X-Content-Type-Options', 'nosniff')
-                self.send_header('Content-Length', str(len(body)))
-                self.end_headers()
-                self.wfile.write(body)
+                self.static_response(file)
         except (ServiceError, YouTubeError, TMDBError) as error:
             self.json_response({'error': error.message}, error.status)
         except (OSError, ValueError, KeyError, IndexError):

@@ -121,7 +121,7 @@ test('Internet tests preserve device origin, convert bits, cancel and retain com
   w.PeepSpeedEngine=class {constructor(config){this.config=config;this.results=results;instance=this}play(){}pause(){this.paused=true}};
   w.PeepNetwork.open();assert.equal(d.querySelector('#quality-down').textContent,'—');
   await w.PeepNetwork.start();assert.equal(instance.config.logAimApiUrl,null);assert.equal(instance.config.logMeasurementApiUrl,null);
-  assert.equal(instance.config.autoStart,false);assert.equal(w.PeepNetwork.running,true);instance.onResultsChange();assert.equal(d.querySelector('#hub-internet-speed').textContent,'Velocidade: medir');
+  assert.equal(instance.config.autoStart,false);assert.equal(w.PeepNetwork.running,true);instance.onResultsChange();assert.equal(d.querySelector('#hub-internet-speed').textContent,'Sem teste');
   instance.onFinish(results);assert.equal(w.PeepNetwork.last.downloadMbps,80);assert.equal(w.PeepNetwork.last.source,'tv');assert.equal(d.querySelector('#quality-ping').textContent,'18');
   const savedAt=w.PeepNetwork.last.at;
   await w.PeepNetwork.start();const pending=instance;w.PeepNetwork.cancel();pending.onFinish(results);
@@ -387,5 +387,47 @@ test('channel remote navigation leaves the biography and reaches every lower rea
   assert.equal(d.activeElement,last);await delay(30);assert.ok(scrolled.includes(last),'Final note must be brought into view');
   for(const node of route.slice(0,-1).reverse()){press(w,d,'ArrowUp');assert.equal(d.activeElement,node);}
   assert.equal(d.activeElement,summary);bio.open=true;press(w,d,'ArrowDown');assert.equal(d.activeElement,hiddenParagraph,'An expanded biography remains readable');press(w,d,'ArrowUp');assert.equal(d.activeElement,summary);assert.deepEqual(errors,[]);
+ }finally{w.close()}
+});
+function place(node,x,y,width=200,height=60){const rect={x,y,width,height,left:x,top:y,right:x+width,bottom:y+height};node.getBoundingClientRect=()=>rect;node.getClientRects=()=>node.closest('[hidden]')?[]:[rect]}
+test('remote leaves native selects vertically and coalesces held keys to one move per frame',async()=>{
+ const {w,d,errors}=await open();
+ try{
+  const select=d.querySelector('#catalog-type'),above=d.querySelector('#weather-card'),below=d.querySelector('#refresh-markets'),side=d.querySelector('#catalog-collection');
+  place(above,20,100);place(select,20,250);place(side,260,250);place(below,20,400);
+  select.focus();press(w,d,'ArrowDown');assert.equal(d.activeElement,below,'Down must not be trapped in a select');
+  select.focus();press(w,d,'ArrowUp');assert.equal(d.activeElement,above);
+  select.focus();press(w,d,'ArrowRight');assert.equal(d.activeElement,side,'Right moves to the neighbouring control');
+  const input=d.createElement('input');input.type='text';d.body.append(input);place(input,20,500);input.focus();
+  const event=new w.KeyboardEvent('keydown',{key:'ArrowLeft',bubbles:true,cancelable:true});input.dispatchEvent(event);assert.equal(event.defaultPrevented,false,'Left/right still edit text');
+  above.focus();press(w,d,'ArrowDown');assert.equal(d.activeElement,select);
+  d.activeElement.dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true,repeat:true}));
+  assert.equal(d.activeElement,select,'A repeat inside the same frame is dropped instead of queued');
+  await delay(40);d.activeElement.dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true,repeat:true}));
+  assert.equal(d.activeElement,below,'The next frame accepts the held key again');
+  assert.deepEqual(errors,[]);
+ }finally{w.close()}
+});
+test('performance history is collected from telemetry while home is visible and the system panel shows only real readings',async()=>{
+ const {w,d,errors}=await open();
+ try{
+  const base=Date.now()/1000;
+  for(let i=0;i<3;i++){const sample=fixture();sample.at=base+i*2;sample.ram.availableBytes=400000000+i*1e7;w.dispatchEvent(new w.CustomEvent('peep-metrics',{detail:sample}))}
+  assert.equal(w.PeepPerformance.history.ram.length,3,'RAM history must not wait for the Performance tab');
+  assert.equal(w.PeepPerformance.pro.samples.length,3);
+  const late=fixture();late.at=base+300;w.dispatchEvent(new w.CustomEvent('peep-metrics',{detail:late}));
+  assert.equal(w.PeepPerformance.pro.samples.length,1,'A gap starts a new continuous window instead of drawing across it');
+  d.querySelector('[data-page=performance]').click();await delay(30);
+  assert.match(d.querySelector('#perf-ram-range').textContent,/Histórico|Mín/);
+  d.querySelector('#hub-memory').click();const text=d.querySelector('#panel-content').textContent;
+  assert.doesNotMatch(text,/KONKA 4K Android TV-A|rtd2851a|roda no Mac/,'No recorded or fabricated fallback values');
+  assert.match(text,/Android nativo nesta TV/);assert.match(text,/RAM em uso \(sistema\)/);
+  assert.deepEqual(errors,[]);
+ }finally{w.close()}
+});
+test('bluetooth unavailable is reported instead of a permanent query state',async()=>{
+ const {w,d}=await open();
+ try{w.PeepTV.bluetoothStatus=()=>JSON.stringify({state:'unsupported',devices:[]});w.horizonReadBluetooth();w.paintBluetoothCount?.();
+  assert.equal(d.querySelector('#hub-bt-count').textContent,'Bluetooth · indisponível nesta TV');
  }finally{w.close()}
 });
