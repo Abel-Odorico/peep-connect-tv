@@ -120,7 +120,7 @@ def check_files(apk, require_apk=True):
     old = signal.signal(signal.SIGALRM, expired)
     signal.alarm(12)
     try:
-        files = [ROOT / 'server.py', ROOT / 'youtube_service.py', ROOT / 'tmdb_service.py', ROOT / 'dist/index.html']
+        files = [ROOT / 'server.py', ROOT / 'youtube_service.py', ROOT / 'youtube_analytics.py', ROOT / 'tmdb_service.py', ROOT / 'dist/index.html']
         files += list((ROOT / 'dist').glob('*.js')) + list((ROOT / 'dist').glob('*.css'))
         for file in files:
             if not file.read_bytes():
@@ -140,7 +140,7 @@ def ensure_service(device):
             raise RuntimeError('A porta 8770 pertence a outro serviço. Feche-o antes de continuar.')
         try:
             status = request('/api/youtube/status')
-            if status.get('channelStatsVersion') == 2 and status.get('deviceFlowVersion') == 2 and 'apiConfigured' in status and health.get('tvDevice') == device and health.get('catalogVersion') == 2 and health.get('ambientVersion') == 1 and health.get('performanceVersion') == 1:
+            if status.get('channelStatsVersion', 0) >= 3 and status.get('analyticsVersion') == 1 and status.get('deviceFlowVersion') == 2 and 'apiConfigured' in status and health.get('tvDevice') == device and health.get('catalogVersion') == 2 and health.get('ambientVersion') == 1 and health.get('performanceVersion') == 1:
                 return
         except (OSError, ValueError):
             pass

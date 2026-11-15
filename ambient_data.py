@@ -49,10 +49,10 @@ def ambient_weather(remote_json, url, force=False):
 def annotate_markets(payload, now=None):
     now = time.time() if now is None else now
     items={}
-    for key in ('usd','ibov','usdc'):
+    for key in ('usd','ibov','usdc','btc'):
         item=dict(payload.get('items',{}).get(key) or {})
         if item.get('ok'):
-            values=[item.get('value')]+([item.get('brl')] if key=='usdc' else [])
+            values=[item.get('value')]+([item.get('brl')] if key in ('usdc','btc') else [])
             valid=all(isinstance(v,(int,float)) and not isinstance(v,bool) and math.isfinite(v) and v>0 for v in values)
             future=any(stamp(item.get(k)) and item[k]>now+300 for k in ('sourceAt','fetchedAt'))
             if not valid or future:
@@ -75,7 +75,7 @@ def ambient_markets(loader, cache, cache_lock, force=False):
         if forced:
             _last_market_force=now
             with cache_lock:
-                for name in ('usd','ibov','usdc'): cache.pop(('market',name),None)
+                for name in ('usd','ibov','usdc','btc'): cache.pop(('market',name),None)
         result=annotate_markets(loader())
         result['refreshLimited']=bool(force and not forced)
         return result

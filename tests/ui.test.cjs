@@ -14,7 +14,7 @@ async function open(initialPrefs,installedApps,demo=false){
  const files=[...html.matchAll(/<script src="([^"]+)" defer><\/script>/g)].map(m=>m[1]);
  if(demo)files.unshift('../demo/studio-fixtures.js');
  html=html.replace(/<script src="[^"]+" defer><\/script>/g,'').replace(/<link[^>]*stylesheet[^>]*>/g,'');
- html=html.replace('</body>','<script>'+files.map(f=>fs.readFileSync(path.join(root,f),'utf8')).join('\n').replaceAll('</script','<\\/script')+'</script></body>');
+ html=html.replace('</body>',()=>'<script>'+files.map(f=>fs.readFileSync(path.join(root,f),'utf8')).join('\n').replaceAll('</script','<\\/script')+'</script></body>');
  const errors=[];const console=new VirtualConsole();console.on('jsdomError',e=>errors.push(e.message));
  const dom=new JSDOM(html,{url:demo?'https://example.org/demo/studio.html':'http://127.0.0.1:8770/?tv=1',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:console,beforeParse(w){
   if(initialPrefs){w.localStorage.setItem('konka-glass-v1',JSON.stringify(initialPrefs));w.Image=class{set src(value){this._src=value;w.setTimeout(()=>this.onload?.(),0)}get src(){return this._src}}}
@@ -96,12 +96,12 @@ test('channel has its own tab, reads the connected channel and charts only obser
 });
 test('theme keyboard activates exactly one tab without global spatial navigation',async()=>{
  const {dom,w,d,errors}=await open();try{
-  w.PeepStudio.themes('style');assert.equal(d.querySelectorAll('[role=tab]').length,5);
+  w.PeepStudio.themes('style');assert.equal(d.querySelectorAll('#panel [role=tab]').length,5);
   assert.equal(d.querySelectorAll('.studio-theme:not([hidden])').length,6);
   const first=d.querySelector('[data-studio-tab=style]');first.focus();
   first.dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true,cancelable:true}));
-  assert.equal(d.activeElement.dataset.studioTab,'background');assert.equal(d.querySelector('[role=tab][aria-selected=true]').dataset.studioTab,'background');
-  assert.equal(d.querySelectorAll('[role=tabpanel]:not([hidden])').length,1);
+  assert.equal(d.activeElement.dataset.studioTab,'background');assert.equal(d.querySelector('#panel [role=tab][aria-selected=true]').dataset.studioTab,'background');
+  assert.equal(d.querySelectorAll('#panel [role=tabpanel]:not([hidden])').length,1);
   assert.equal(d.body.classList.contains('runtime-modal'),true);
   d.querySelector('#studio-tempo').value='vivo';d.querySelector('#studio-tempo').dispatchEvent(new w.Event('change'));
   assert.equal(d.body.dataset.motionRunning,'true');
@@ -423,4 +423,74 @@ test('emulator page is self-contained, labels its data source and never inlines 
  assert.match(js,/api\/health/);assert.match(js,/demo\/studio\.html\?tv=1/);assert.match(js,/index\.html\?tv=1/);
  assert.match(js,/dados fictícios/,'Demo source is labelled as fictional');assert.match(js,/WIDTH=960,HEIGHT=540/);
  assert.match(css,/prefers-reduced-motion/);
+});
+
+test('Analytics renders watch hours and period reports in four accessible theme-aware panels',async()=>{
+ const {w,d,errors}=await open(null,null,true);
+ try{
+  d.querySelector('[data-page=channel]').click();await delay(90);
+  assert.notEqual(d.querySelector('#ca-hours').textContent,'—');
+  assert.match(d.querySelector('#ca-source').textContent,/fictícia/);
+  assert.ok(d.querySelectorAll('#ca-chart svg rect').length>0);
+  const overview=d.querySelector('#ca-tab-overview');overview.focus();overview.dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true,cancelable:true}));
+  assert.equal(d.activeElement.id,'ca-tab-videos');assert.equal(d.querySelector('#ca-panel-videos').hidden,false);
+  assert.equal(d.querySelector('#ca-panel-overview').hidden,true);
+  assert.equal(d.querySelectorAll('.ca-video').length,2);
+  d.querySelector('#ca-tab-audience').click();assert.match(d.querySelector('#ca-devices').textContent,/TV/);
+  d.querySelector('[data-ca-days="7"]').click();await delay(60);
+  d.querySelector('#ca-tab-overview').click();assert.equal(d.querySelectorAll('#ca-chart svg rect').length,7);
+  assert.match(d.querySelector('#ca-status').textContent,/7 dias/);
+  d.querySelector('[data-page=home]').click();assert.equal(d.querySelector('#channel-dashboard').hidden,true);
+  assert.deepEqual(errors,[]);
+ }finally{await delay(40);w.close()}
+});
+
+test('Analytics clears private data when switching to a channel without the additional grant',async()=>{
+ const {w,d,errors}=await open(null,null,true);
+ try{
+  d.querySelector('[data-page=channel]').click();await delay(70);
+  assert.notEqual(d.querySelector('#ca-hours').textContent,'—');
+  const other='UC'+'a'.repeat(22);
+  d.dispatchEvent(new w.CustomEvent('peep-channel-data',{detail:{id:other,status:{analyticsVersion:1,configured:true,accounts:[{id:other,analytics:false}]}}}));
+  assert.equal(d.querySelector('#ca-hours').textContent,'—');assert.equal(d.querySelector('#ca-top-videos a'),null);
+  assert.match(d.querySelector('#ca-status').textContent,/Falta apenas/);assert.equal(d.querySelector('#ca-permission').hidden,false);
+  assert.deepEqual(errors,[]);
+ }finally{await delay(40);w.close()}
+});
+
+test('Standby preserves climate and shows dollar, USDC and Bitcoin with source times',async()=>{
+ const {w,d,errors}=await open(null,null,true);
+ try{
+  w.PeepIdle.show();await delay(120);
+  assert.equal(w.PeepIdle.active,true);
+  assert.equal(d.querySelectorAll('.prisma-markets article').length,3);
+  assert.match(d.querySelector('#idle-usd-price').textContent,/5,2000/);
+  assert.match(d.querySelector('#idle-btc-price').textContent,/90.000/);
+  assert.match(d.querySelector('#idle-usdc-source').textContent,/fictícia/);
+  assert.ok(d.querySelector('#rich-temperature'));assert.ok(d.querySelector('#rich-forecast-days'));
+  w.PeepIdle.wake();assert.equal(w.PeepIdle.active,false);
+  assert.deepEqual(errors,[]);
+ }finally{await delay(40);w.close()}
+});
+
+test('Analytics ignores late reports after a channel switch and leaves zero watch time as zero',async()=>{
+ const {w,d,errors}=await open();
+ try{
+  const a='UC'+'a'.repeat(22),b='UC'+'b'.repeat(22);let finish;
+  w.fetch=async input=>{
+   const url=new URL(input,'http://127.0.0.1:8770');
+   if(url.pathname==='/api/youtube/analytics')return await new Promise(resolve=>finish=resolve);
+   return new Response(JSON.stringify({connected:true,analyticsVersion:1,active:a,accounts:[{id:a,analytics:true}]}));
+  };
+  d.dispatchEvent(new w.CustomEvent('peep-channel-visible',{detail:{visible:true}}));
+  d.dispatchEvent(new w.CustomEvent('peep-channel-data',{detail:{id:a,status:{analyticsVersion:1,accounts:[{id:a,analytics:true}]}}}));await delay(25);
+  d.dispatchEvent(new w.CustomEvent('peep-channel-data',{detail:{id:b,status:{analyticsVersion:1,accounts:[{id:b,analytics:false}]}}}));
+  finish(new Response(JSON.stringify({channel:a,totals:{watchHours:999},daily:[],days:28})));await delay(35);
+  assert.equal(d.querySelector('#ca-hours').textContent,'—');assert.equal(d.querySelector('#ca-chart svg'),null);
+  w.fetch=async()=>new Response(JSON.stringify({channel:a,totals:{watchHours:0,views:0},days:28,startDate:'2026-11-01',endDate:'2026-11-28',availableThrough:'2026-11-01',daily:[{day:'2026-11-01',estimatedMinutesWatched:0,views:0}],at:Date.now()/1000}));
+  d.dispatchEvent(new w.CustomEvent('peep-channel-data',{detail:{id:a,status:{analyticsVersion:1,accounts:[{id:a,analytics:true}]}}}));await delay(30);
+  assert.equal(d.querySelector('#ca-hours').textContent,'0');assert.equal(d.querySelector('#ca-views').textContent,'0');
+  assert.match(d.querySelector('#ca-chart svg').getAttribute('aria-label'),/máximo 0/);
+  assert.deepEqual(errors,[]);
+ }finally{await delay(30);w.close()}
 });

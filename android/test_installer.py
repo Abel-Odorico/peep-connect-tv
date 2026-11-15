@@ -74,7 +74,7 @@ class InstallerSafetyTests(unittest.TestCase):
             kill.assert_not_called()
 
     def test_current_service_is_reused_without_restart(self):
-        with patch.object(installer, 'request', side_effect=[{'service': 'Konka Glass', 'tvDevice': '192.0.2.10:33581', 'catalogVersion': 2, 'ambientVersion': 1, 'performanceVersion': 1}, {'apiConfigured': True, 'deviceFlowVersion': 2, 'channelStatsVersion': 2}]), patch.object(installer, 'command') as command, patch.object(installer.subprocess, 'Popen') as start:
+        with patch.object(installer, 'request', side_effect=[{'service': 'Konka Glass', 'tvDevice': '192.0.2.10:33581', 'catalogVersion': 2, 'ambientVersion': 1, 'performanceVersion': 1}, {'apiConfigured': True, 'deviceFlowVersion': 2, 'channelStatsVersion': 3, 'analyticsVersion': 1}]), patch.object(installer, 'command') as command, patch.object(installer.subprocess, 'Popen') as start:
             installer.ensure_service('192.0.2.10:33581')
             command.assert_not_called()
             start.assert_not_called()

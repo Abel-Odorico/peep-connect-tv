@@ -14,6 +14,7 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 
 SCOPE = 'https://www.googleapis.com/auth/youtube.readonly'
+ANALYTICS_SCOPE = 'https://www.googleapis.com/auth/yt-analytics.readonly'
 CHANNEL_CACHE_SECONDS = 900
 CHANNEL_FORCE_SECONDS = 30
 
@@ -32,6 +33,8 @@ class YouTube:
         self.public_cache = None
         self.channel_cache = {}
         self.channel_lock = threading.Lock()
+        from youtube_analytics import ChannelAnalytics
+        self.analytics = ChannelAnalytics(self)
 
     def api_key(self):
         value = os.environ.get('YOUTUBE_API_KEY', '')
@@ -222,7 +225,7 @@ class YouTube:
     def save_account(self, channel, tokens):
         data = self.accounts_data()
         cid = channel['id']
-        data['accounts'][cid] = {**channel, 'tokens': tokens}
+        data['accounts'][cid] = {**data['accounts'].get(cid, {}), **channel, 'tokens': tokens}
         data['active'] = cid
         self.write_accounts(data)
 
@@ -254,10 +257,10 @@ class YouTube:
             device_configured = False
         connected = (device_configured if token.get('_client_kind') == 'device' else configured) and bool(token.get('refresh_token') or token.get('access_token'))
         data = self.accounts_data()
-        entries = [{'id': cid, 'title': info.get('title', 'Canal do YouTube'), 'image': info.get('image', '')} for cid, info in data['accounts'].items() if info.get('tokens')]
+        entries = [{'id': cid, 'title': info.get('title', 'Canal do YouTube'), 'image': info.get('image', ''), 'analytics': ANALYTICS_SCOPE in info.get('analytics_tokens', {}).get('scope', '').split()} for cid, info in data['accounts'].items() if info.get('tokens')]
         active = data['active']
         current = data['accounts'].get(active, {})
-        return {'configured': configured, 'deviceConfigured': device_configured, 'deviceFlowVersion': 2, 'channelStatsVersion': 3, 'apiConfigured': bool(self.api_key()), 'connected': connected, 'account': (self.feed_cache.get('account') if self.feed_cache else current.get('title')) if connected else None, 'accounts': entries, 'active': active if connected else ''}
+        return {'configured': configured, 'deviceConfigured': device_configured, 'deviceFlowVersion': 2, 'channelStatsVersion': 3, 'analyticsVersion': 1, 'apiConfigured': bool(self.api_key()), 'connected': connected, 'account': (self.feed_cache.get('account') if self.feed_cache else current.get('title')) if connected else None, 'accounts': entries, 'active': active if connected else ''}
 
     def public_feed(self):
         with self.lock:
@@ -410,15 +413,17 @@ class YouTube:
         except (OSError, ValueError):
             raise YouTubeError('O YouTube não respondeu. Confira a internet e tente novamente.') from None
 
-    def begin(self, port):
+    def begin(self, port, analytics=False, channel=''):
         config = self.config()
+        if analytics and channel and channel not in self.accounts_data()['accounts']:
+            raise YouTubeError('Conecte este canal antes de autorizar o Analytics.', 400)
         state, verifier = secrets.token_urlsafe(32), secrets.token_urlsafe(64)
         challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b'=').decode()
         redirect = f'http://127.0.0.1:{port}/api/youtube/callback'
         with self.lock:
             self.pending = {k: v for k, v in self.pending.items() if time.time() - v['at'] < 600}
-            self.pending[state] = {'verifier': verifier, 'redirect': redirect, 'at': time.time()}
-        params = {'client_id': config['client_id'], 'redirect_uri': redirect, 'response_type': 'code', 'scope': SCOPE, 'access_type': 'offline', 'prompt': 'select_account consent', 'state': state, 'code_challenge': challenge, 'code_challenge_method': 'S256'}
+            self.pending[state] = {'verifier': verifier, 'redirect': redirect, 'at': time.time(), 'analytics': analytics, 'channel': channel}
+        params = {'client_id': config['client_id'], 'redirect_uri': redirect, 'response_type': 'code', 'scope': SCOPE + (' ' + ANALYTICS_SCOPE if analytics else ''), 'access_type': 'offline', 'prompt': 'select_account consent', 'state': state, 'code_challenge': challenge, 'code_challenge_method': 'S256'}
         return 'https://accounts.google.com/o/oauth2/v2/auth?' + urllib.parse.urlencode(params), state
 
     def callback(self, query, cookie_state):
@@ -441,7 +446,24 @@ class YouTube:
             if SCOPE not in data.get('scope', '').split():
                 raise YouTubeError('A permissão de leitura do YouTube não foi concedida.', 403)
             data['expires_at'] = time.time() + int(data.get('expires_in', 3600))
-            self.save_account(self.channel_for_token(data['access_token']), data)
+            channel = self.channel_for_token(data['access_token'])
+            if attempt.get('analytics'):
+                if ANALYTICS_SCOPE not in data.get('scope', '').split():
+                    raise YouTubeError('A leitura do YouTube Analytics não foi autorizada. Suas contas anteriores foram preservadas.', 403)
+                if attempt.get('channel') and channel['id'] != attempt['channel']:
+                    raise YouTubeError('Você autorizou outro canal. Escolha o mesmo canal selecionado no painel.', 400)
+                accounts = self.accounts_data()
+                previous = accounts['accounts'].get(channel['id'])
+                if not previous:
+                    raise YouTubeError('Conecte o canal no painel antes de autorizar o Analytics.', 400)
+                # Separate grant: the TV login and other channels remain intact.
+                if not data.get('refresh_token'):
+                    data['refresh_token'] = previous.get('analytics_tokens', {}).get('refresh_token', '')
+                previous['analytics_tokens'] = data
+                self.write_accounts(accounts)
+                self.analytics.clear(channel['id'])
+            else:
+                self.save_account(channel, data)
             self.feed_cache = None
 
     def access_token(self):

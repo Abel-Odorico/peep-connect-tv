@@ -11,11 +11,18 @@
  if(url.pathname==='/api/health')data={ok:true};
  else if(url.pathname==='/api/system')data=snapshot();
  else if(url.pathname==='/api/performance')data={at:Date.now()/1000,cpu:{usagePercent:28},memory:{Cached:120000000,SwapTotal:200000000,SwapFree:140000000},loadAverage:[.5,.4,.3]};
- else if(url.pathname==='/api/youtube/status')data={connected:true,configured:true,channelStatsVersion:2,active:id,accounts:[{id,title:'Canal demonstrativo',image:''}]};
+ else if(url.pathname==='/api/youtube/status')data={connected:true,configured:true,channelStatsVersion:3,analyticsVersion:1,active:id,accounts:[{id,title:'Canal demonstrativo',image:'',analytics:true}]};
  else if(url.pathname==='/api/youtube/channel')data=channel;
+ else if(url.pathname==='/api/youtube/analytics'){
+  const days=Number(url.searchParams.get('days'))||28,end=new Date();end.setUTCDate(end.getUTCDate()-3);const startDate=new Date(end);startDate.setUTCDate(startDate.getUTCDate()-days+1);
+  const daily=Array.from({length:days},(_,i)=>{const day=new Date(startDate);day.setUTCDate(day.getUTCDate()+i);return {day:day.toISOString().slice(0,10),views:700+(i*157)%1400,estimatedMinutesWatched:2800+(i*337)%4000,averageViewDuration:244,averageViewPercentage:43.2,subscribersGained:8+i%12,subscribersLost:2,likes:30+i%20,comments:4+i%9,shares:5+i%6}});
+  const totals={averageViewDuration:244,averageViewPercentage:43.2};for(const key of ['views','estimatedMinutesWatched','subscribersGained','subscribersLost','likes','comments','shares'])totals[key]=daily.reduce((n,d)=>n+d[key],0);totals.watchHours=totals.estimatedMinutesWatched/60;totals.netSubscribers=totals.subscribersGained-totals.subscribersLost;
+  data={channel:id,days,startDate:startDate.toISOString().slice(0,10),endDate:end.toISOString().slice(0,10),availableThrough:daily.at(-1).day,daily,totals,topVideos:channel.videos.map((v,i)=>({video:v.id,title:v.title,views:12000-i*3000,estimatedMinutesWatched:29000-i*8000,averageViewPercentage:42+i*4})),traffic:[{insightTrafficSourceType:'YT_SEARCH',views:18000},{insightTrafficSourceType:'RELATED_VIDEO',views:12000},{insightTrafficSourceType:'EXT_URL',views:5000}],devices:[{deviceType:'MOBILE',views:22000},{deviceType:'TV',views:9000},{deviceType:'DESKTOP',views:4000}],countries:[{country:'BR',views:30000},{country:'PT',views:5000}],at:Date.now()/1000,source:'Demonstração fictícia · Analytics ilustrativo',errors:{}};
+ }
+ else if(url.pathname==='/api/markets')data={items:Object.fromEntries([['usd',5.2,null],['usdc',1,5.2],['btc',90000,468000]].map(([key,value,brl])=>[key,{ok:true,value,...(brl===null?{}:{brl}),change:.4,source:'Demonstração fictícia',sourceAt:null,fetchedAt:Date.now()/1000}]))};
  else if(url.pathname==='/api/weather')data={fetchedAt:Date.now()/1000,current:{temperature_2m:24,weather_code:2,time:'2026-11-09T12:00',relative_humidity_2m:62,wind_speed_10m:8},daily:{time:['2026-11-09'],temperature_2m_min:[18],temperature_2m_max:[28],weather_code:[2]}};
  else if(url.pathname==='/api/catalog')data={results:[]};
- else if(url.pathname==='/api/markets')data={items:{}};
+
  else return new Response(JSON.stringify({error:'Esta integração não está disponível na demonstração.'}),{status:404,headers:{'Content-Type':'application/json'}});
  return new Response(JSON.stringify(data),{headers:{'Content-Type':'application/json'}});
  };
@@ -30,7 +37,7 @@
 
   const name=document.querySelector('#profile');name.setAttribute('aria-label','Perfil demonstrativo');
   document.querySelector('#greeting').textContent='PRÉVIA · DADOS FICTÍCIOS';
-  const target=new URLSearchParams(location.search).get('page');if(['channel','performance','ambient'].includes(target))navigate(target);
+  const target=new URLSearchParams(location.search).get('page');if(['channel','performance','ambient'].includes(target))navigate(target);else if(target==='standby')PeepIdle.show();
   document.querySelectorAll('a[href*="youtube.com/watch"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();alert('Vídeo ilustrativo da demonstração.')}));
  });
 })();

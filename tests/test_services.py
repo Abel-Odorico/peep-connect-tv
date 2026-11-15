@@ -24,7 +24,7 @@ class YouTubeTests(unittest.TestCase):
 
     def test_missing_configuration_is_explicit(self):
         (self.yt.private / 'google-client.json').unlink()
-        self.assertEqual(self.yt.status(), {'configured': False, 'deviceConfigured': False, 'deviceFlowVersion': 2, 'channelStatsVersion': 3, 'apiConfigured': False, 'connected': False, 'account': None, 'accounts': [], 'active': ''})
+        self.assertEqual(self.yt.status(), {'configured': False, 'deviceConfigured': False, 'deviceFlowVersion': 2, 'channelStatsVersion': 3, 'analyticsVersion': 1, 'apiConfigured': False, 'connected': False, 'account': None, 'accounts': [], 'active': ''})
         with self.assertRaises(YouTubeError):
             self.yt.begin(8770)
 
@@ -93,6 +93,13 @@ class HandlerTests(unittest.TestCase):
         for path in ['/../.private/tmdb.key', '/%2e%2e/.private/google-client.json', '/.private/youtube-tokens.json']:
             self.assertEqual(self.call(path)[0], 404)
         self.assertEqual(self.call('/api/youtube/status', headers={'Origin': 'https://untrusted.invalid'})[0], 403)
+
+    def test_analytics_endpoint_retains_origin_guards_and_binds_query(self):
+        url = '/api/youtube/analytics?channel=UC' + 'a' * 22 + '&days=7&force=1'
+        self.assertEqual(self.call(url, headers={'Origin': 'https://untrusted.invalid'})[0], 403)
+        with patch.object(server.YOUTUBE.analytics, 'report', return_value={'daily': []}) as report:
+            self.assertEqual(self.call(url)[0], 200)
+            report.assert_called_once_with('UC' + 'a' * 22, '7', force=True)
 
     def test_disconnect_requires_same_origin_and_explicit_header(self):
         self.assertEqual(self.call('/api/youtube/disconnect', 'POST')[0], 403)

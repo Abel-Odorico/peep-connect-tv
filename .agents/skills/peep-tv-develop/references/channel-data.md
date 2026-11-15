@@ -11,3 +11,11 @@ Ler `docs/CHANNEL-EXPANDED.md` para as métricas exibidas. Para implementar ou r
 7. A demo em `demo/` reutiliza os arquivos da guia com dados ilustrativos declarados. Ao mudar `dist/channel-stats.js` ou CSS, validar o mock e confirmar a publicação. Não usar tokens, endereços da TV nem captura real no GitHub Pages.
 
 Referência de API: documentação oficial de [canais](https://developers.google.com/youtube/data/reference/rest/v3/channels), [vídeos](https://developers.google.com/youtube/data/reference/rest/v3/videos) e [escopos do Analytics](https://developers.google.com/youtube/analytics/reference).
+
+## Analytics e descanso (0.19)
+
+Consultar `docs/CHANNEL-ANALYTICS-0.19.md`. O login por código de TVs não aceita `yt-analytics.readonly`; manter o escopo existente e autorizar Analytics explicitamente pelo cliente de computador no Mac, com tokens separados por canal. Nunca substituir o login da TV ou aplicar ao canal B o token do canal A. O helper é `android/autorizar_analytics.py`.
+
+`channel-analytics.js` recebe eventos explícitos `peep-channel-visible` e `peep-channel-data` do proprietário `channel-stats.js`; não acrescenta wrappers a navigate. Relatórios fixos, cache limitado e sem polling. Limpar valores privados e invalidar respostas atrasadas ao trocar canal/período ou perder autorização. Ausência, zero, média agregada e horas elegíveis são conceitos distintos.
+
+O descanso compartilha `marketData`/`loadMarkets`, recebe BTC do serviço de cotações e só tenta atualizar com descanso visível. Preservar clima/previsão e o modo Essencial. Ao testar scripts concatenados em HTML, usar função de substituição em String.replace: uma string de substituição interpreta símbolos monetários como `$'`.

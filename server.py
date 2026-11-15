@@ -95,6 +95,13 @@ def usdc_quote():
     return {'value': finite_number(data['rates'].get('USD'), True), 'brl': finite_number(data['rates'].get('BRL'), True), 'fetchedAt': time.time(), 'sourceAt': None, 'source': 'Coinbase', 'url': 'https://www.coinbase.com/price/usdc', 'label': 'USDC/USD · referência'}
 
 
+def bitcoin_quote():
+    data = remote_json('https://api.coinbase.com/v2/exchange-rates?currency=BTC')['data']
+    if data.get('currency') != 'BTC':
+        raise ServiceError('A fonte não retornou a moeda BTC.')
+    return {'value': finite_number(data['rates'].get('USD'), True), 'brl': finite_number(data['rates'].get('BRL'), True), 'fetchedAt': time.time(), 'sourceAt': None, 'source': 'Coinbase', 'url': 'https://www.coinbase.com/price/bitcoin', 'label': 'BTC/USD · referência'}
+
+
 def ibovespa_quote():
     data = remote_json('https://query1.finance.yahoo.com/v8/finance/chart/%5EBVSP?interval=1d&range=5d')
     item = data['chart']['result'][0]
@@ -120,8 +127,8 @@ def markets():
             return name, {'ok': True, **cached(('market', name), 300, loader)}
         except (ServiceError, KeyError, IndexError, TypeError, ValueError):
             return name, {'ok': False, 'error': 'Fonte indisponível ou limite de consultas. Tente atualizar mais tarde.'}
-    with ThreadPoolExecutor(max_workers=3) as pool:
-        jobs = [pool.submit(safe_item, name, loader) for name, loader in [('usd', dollar_quote), ('ibov', ibovespa_quote), ('usdc', usdc_quote)]]
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        jobs = [pool.submit(safe_item, name, loader) for name, loader in [('usd', dollar_quote), ('ibov', ibovespa_quote), ('usdc', usdc_quote), ('btc', bitcoin_quote)]]
         return {'items': dict(job.result() for job in jobs), 'fetchedAt': time.time()}
 
 
@@ -306,17 +313,21 @@ class Handler(BaseHTTPRequestHandler):
             elif path.path == '/api/youtube/connect':
                 # Canonical host is required to bind the OAuth callback cookie.
                 if self.headers.get('Host') != f'127.0.0.1:{PORT}':
-                    self.redirect(f'http://127.0.0.1:{PORT}/api/youtube/connect')
+                    self.redirect(f'http://127.0.0.1:{PORT}/api/youtube/connect' + ('?' + path.query if path.query else ''))
                     return
                 if self.headers.get('Sec-Fetch-Site') == 'cross-site':
                     raise ServiceError('Inicie a conexão a partir do painel local.', 403)
-                url, state = YOUTUBE.begin(PORT)
+                query = urllib.parse.parse_qs(path.query)
+                url, state = YOUTUBE.begin(PORT, analytics=query.get('analytics') == ['1'], channel=query.get('channel', [''])[0])
                 self.redirect(url, f'kg_oauth={state}; HttpOnly; SameSite=Lax; Path=/api/youtube/callback; Max-Age=600')
             elif path.path == '/api/youtube/callback':
                 cookies = SimpleCookie(self.headers.get('Cookie', ''))
                 state = cookies['kg_oauth'].value if 'kg_oauth' in cookies else ''
                 YOUTUBE.callback(urllib.parse.parse_qs(path.query), state)
-                self.redirect('/#youtube-section', 'kg_oauth=; HttpOnly; SameSite=Lax; Path=/api/youtube/callback; Max-Age=0')
+                self.redirect('/#channel-dashboard', 'kg_oauth=; HttpOnly; SameSite=Lax; Path=/api/youtube/callback; Max-Age=0')
+            elif path.path == '/api/youtube/analytics':
+                query = urllib.parse.parse_qs(path.query)
+                self.json_response(YOUTUBE.analytics.report(query.get('channel', [''])[0], query.get('days', ['28'])[0], force=query.get('force') == ['1']))
             elif path.path == '/api/youtube/channel':
                 query = urllib.parse.parse_qs(path.query)
                 self.json_response(YOUTUBE.channel_stats(query.get('channel', [''])[0], force=query.get('force') == ['1']))

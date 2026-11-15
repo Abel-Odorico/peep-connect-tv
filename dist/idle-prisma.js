@@ -57,8 +57,25 @@
  const weatherCurrent=idle.querySelector('.rich-current');weatherCurrent.classList.add('prisma-weather');
  const weatherRegion=document.createElement('div');weatherRegion.className='prisma-weather-dock';
  shell.insertBefore(weatherRegion,idle.querySelector('.rich-forecast'));weatherRegion.append(weatherCurrent,idle.querySelector('.rich-forecast'));
+ const marketStrip=document.createElement('section');marketStrip.className='prisma-markets';marketStrip.setAttribute('aria-label','Cotações de referência');
+ marketStrip.innerHTML=[['usd','Dólar comercial','USD / BRL','$'],['usdc','USD Coin','USDC / USD','◎'],['btc','Bitcoin','BTC','₿']].map(([id,name,pair,icon])=>'<article><span class="prisma-market-icon" aria-hidden="true">'+icon+'</span><div><span class="prisma-market-label">'+name+' <small>'+pair+'</small></span><strong id="idle-'+id+'-price">—</strong><span id="idle-'+id+'-detail">Cotação indisponível</span><small id="idle-'+id+'-source">Aguardando consulta</small></div></article>').join('')+'<p>Cotações de referência · consulta a cada 5 min · podem ter atraso.</p>';
+ weatherRegion.append(marketStrip);
+ let idleDataAttempt=0,idleDataBusy=false,idleMarketsSignature='';
+ function paintIdleMarkets(){
+  const items=typeof marketData==='object'?marketData?.items||{}:{},now=Date.now()/1000;
+  const signature=JSON.stringify(['usd','usdc','btc'].map(id=>[items[id],items[id]?.fetchedAt?now-items[id].fetchedAt>360:true]));if(signature===idleMarketsSignature)return;idleMarketsSignature=signature;
+  for(const id of ['usd','usdc','btc']){const item=items[id],valid=item?.ok&&Number.isFinite(item.value)&&item.value>0,price=$('#idle-'+id+'-price'),detail=$('#idle-'+id+'-detail'),source=$('#idle-'+id+'-source');
+   if(!valid){price.textContent='—';detail.textContent='Cotação indisponível';source.textContent=item?.error||'Aguardando serviço local';continue}
+   price.textContent=id==='usd'?brMoney(item.value,4):new Intl.NumberFormat('pt-BR',{style:'currency',currency:'USD',maximumFractionDigits:id==='usdc'?4:0,minimumFractionDigits:id==='usdc'?4:0}).format(item.value);
+   detail.textContent=id==='usd'?(Number.isFinite(item.change)?(item.change>=0?'↑ +':'↓ ')+item.change.toLocaleString('pt-BR',{maximumFractionDigits:2})+'% · variação da fonte':'Compra · referência comercial'):(Number.isFinite(item.brl)?brMoney(item.brl,id==='btc'?0:4)+' por '+id.toUpperCase():'Conversão em real indisponível');
+   const time=Number.isFinite(item.fetchedAt)?new Date(item.fetchedAt*1000).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',timeZone:'America/Sao_Paulo'}):'sem horário',old=item.stale||item.lastFetchFailed||!Number.isFinite(item.fetchedAt)||now-item.fetchedAt>360;
+   source.textContent=(item.source||'Fonte')+' · consultado '+time+(old?' · desatualizado':item.referenceOnly?' · referência anterior':'');
+  }
+ }
+ async function refreshIdleData(){if(!livingIdleActive||document.hidden||idleDataBusy||Date.now()-idleDataAttempt<300000)return;idleDataAttempt=Date.now();idleDataBusy=true;try{await Promise.allSettled([loadMarkets(),loadWeather()]);if(livingIdleActive&&!document.hidden){paintIdleMarkets();paintLivingClock()}}finally{idleDataBusy=false}}
+
  const forecastLabel=idle.querySelector('.rich-forecast-heading>span');forecastLabel.textContent='NOS PRÓXIMOS DIAS';
- const header=idle.querySelector('.rich-header');header.insertAdjacentHTML('beforeend','<span class="prisma-header-tag"><i></i>PRISMA <small>0.16.6</small></span>');
+ const header=idle.querySelector('.rich-header');header.insertAdjacentHTML('beforeend','<span class="prisma-header-tag"><i></i>PRISMA <small>0.19.0</small></span>');
  const footer=idle.querySelector('.rich-footer');footer.querySelector('.horizon-remote-hint').innerHTML='← → painéis <span>·</span> ↑ ↓ cores <span>·</span> OK voltar';
  const editButton=document.createElement('button');editButton.className='prisma-tune';editButton.dataset.idleAction='prisma-settings';editButton.setAttribute('aria-label','Personalizar tela de descanso');editButton.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="15" cy="17" r="3"/></svg>';idle.querySelector('.rich-top-actions').prepend(editButton);
 
@@ -85,7 +102,7 @@
   });
  }
  function paintPrisma(){
-  applyPrisma();paintTemperatureRange();
+  applyPrisma();paintTemperatureRange();if(livingIdleActive&&!document.hidden){paintIdleMarkets();refreshIdleData()}
   if(livingIdleActive&&prefs.idleSceneCycle&&horizonMotionAllowed()&&Date.now()-lastCycle>=180000)cyclePrisma(1);
   idle.dataset.controlsVisible=String(Date.now()-lastInteraction<8000);
  }
