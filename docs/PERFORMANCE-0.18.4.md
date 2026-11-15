@@ -1,3 +1,5 @@
+> Atualização: os ajustes de interface descritos abaixo foram retirados na 0.18.5 após relato de regressão. A correção nativa de Bluetooth foi mantida.
+
 # Fluidez e estabilidade — 0.18.4
 
 ## Mudanças mantidas
