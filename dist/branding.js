@@ -17,7 +17,7 @@ function paintPeepLogo(){
  image.onerror=()=>{$('.peep-brand').classList.remove('has-original-logo');art.replaceChildren()};
  if(blob){peepLogoURL=URL.createObjectURL(blob);image.src=peepLogoURL}else image.src='assets/peep-connect-lettering-alpha.png?v=2';
  art.classList.toggle('original-lettering',!blob);art.dataset.logoMode=mode;
- if(!blob){const lettering=image.cloneNode();lettering.className='peep-lettering-contrast';lettering.setAttribute('aria-hidden','true');art.replaceChildren(image,lettering)}else art.replaceChildren(image);
+ if(!blob){const lettering=document.createElement('span');lettering.className='peep-lettering-contrast';lettering.setAttribute('aria-hidden','true');art.replaceChildren(image,lettering)}else art.replaceChildren(image);
 }
 async function pngBlob(bytes){const sig=[137,80,78,71,13,10,26,10];if(bytes.length<24||sig.some((v,i)=>bytes[i]!==v))throw Error('O arquivo selecionado não é um PNG válido.');const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);if(view.getUint32(16)>10000||view.getUint32(20)>10000)throw Error('A imagem excede o tamanho permitido.');return new Blob([bytes],{type:'image/png'})}
 async function peepZIP(buffer){

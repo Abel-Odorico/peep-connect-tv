@@ -494,3 +494,17 @@ test('Analytics ignores late reports after a channel switch and leaves zero watc
   assert.deepEqual(errors,[]);
  }finally{await delay(30);w.close()}
 });
+
+test('Brand retains its real lettering with one bitmap and uses the same master in standby',async()=>{
+ const {w,d,errors}=await open({theme:'adl-absolute'});
+ try{
+  const art=d.querySelector('.peep-brand-art');assert.equal(art.querySelectorAll('img').length,1);
+  assert.ok(art.querySelector('span.peep-lettering-contrast'));
+  assert.equal(art.querySelector('img').getAttribute('src'),d.querySelector('.horizon-idle-logo img').getAttribute('src'));
+  assert.equal(d.querySelector('.horizon-idle-logo img').getAttribute('width'),'2170');
+  w.PeepIdle.show();await delay(40);assert.equal(w.PeepIdle.active,true);
+  assert.ok(d.querySelector('.prisma-weather-dock .prisma-markets'));assert.ok(d.querySelector('#rich-forecast-days'));
+  assert.equal(d.querySelector('#rich-greeting').textContent,'O MUNDO PODE ESPERAR.');
+  w.PeepIdle.wake();assert.deepEqual(errors,[]);
+ }finally{w.close()}
+});

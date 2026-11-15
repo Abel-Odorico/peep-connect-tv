@@ -60,7 +60,7 @@ function horizonBluetoothPanel(){horizonReadBluetooth();show('<p class="eyebrow"
 // Recompose the idle surface, retaining its data IDs, controls and wake contract.
 idle.classList.add('horizon-idle');
 const galleryStage=document.createElement('div');galleryStage.className='horizon-gallery-stage';galleryStage.setAttribute('aria-hidden','true');galleryStage.innerHTML='<i class="motion-sheet sheet-a"></i><i class="motion-sheet sheet-b"></i><div class="gallery-horizon"></div>';idle.prepend(galleryStage);
-const identity=idle.querySelector('.rich-identity');identity.innerHTML='<span class="horizon-idle-logo" aria-hidden="true"></span><span>Peep Connect</span>';
+const identity=idle.querySelector('.rich-identity');identity.innerHTML='<span class="horizon-idle-logo" aria-hidden="true"><img src="assets/peep-connect-lettering-alpha.png?v=2" width="2170" height="725" alt=""></span><span>Peep Connect</span>';
 const greeting=idle.querySelector('.rich-greeting');greeting.textContent='CONTAGEM · MINAS GERAIS';
 idle.querySelector('.rich-current .rich-location').insertAdjacentHTML('afterbegin','<span class="horizon-climate-title">Lá fora, agora</span>');
 idle.querySelector('.rich-conditions .living-icon').outerHTML=livingIcon('wind');

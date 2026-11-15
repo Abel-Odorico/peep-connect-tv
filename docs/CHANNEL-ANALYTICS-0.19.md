@@ -51,3 +51,11 @@ Fontes oficiais:
 - https://developers.google.com/youtube/analytics/metrics
 - https://developers.google.com/youtube/reporting/guides/authorization
 - https://developers.google.com/identity/protocols/oauth2/limited-input-device
+
+## Refinamento visual 0.19.1
+
+No descanso, Visão geral usa agora uma linha de horizonte com clima e cotações compactas, em vez do grande cartão de vidro. Conversões secundárias e previsão detalhada continuam no painel Previsão (seta direita); Essencial permanece disponível. Nenhuma fonte, consulta ou intervalo mudou.
+
+A marca do descanso passou a usar o mesmo lettering real da home (`peep-connect-lettering-alpha.png`, 2170 × 725). O texto claro usa a transparência como máscara com branco suave: não há mais brightness/invert, bitmap duplicado filtrado ou substituição do lettering no descanso. A proporção da arte é mantida e apenas as margens transparentes são recortadas pelo contêiner CSS. Arquivos originais e importações de logos personalizados são preservados.
+
+A demo recebe versão nos URLs de scripts/CSS. Reabrir uma demo sem mudar a versão podia conservar alguns arquivos antigos em cache e misturar as duas apresentações.

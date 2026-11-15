@@ -51,7 +51,7 @@
 
  // Keep the approved logo and all the existing weather IDs/data flow.
  const shell=idle.querySelector('.rich-shell');shell.classList.add('prisma-shell');
- idle.querySelector('.rich-greeting').textContent='AGORA É TEMPO DE DESACELERAR';
+ idle.querySelector('.rich-greeting').textContent='O MUNDO PODE ESPERAR.';
  const caption=idle.querySelector('.horizon-idle-caption');caption.innerHTML='<span class="prisma-color-dots"><i></i><i></i><i></i></span><span id="prisma-palette-name">Prisma</span><span class="prisma-caption-rule"></span><small>LUZ EM MOVIMENTO</small><span id="horizon-scene-name" hidden></span><span class="horizon-scene-number" hidden></span>';
  const climateTitle=idle.querySelector('.horizon-climate-title');climateTitle.textContent='Contagem, MG';
  const weatherCurrent=idle.querySelector('.rich-current');weatherCurrent.classList.add('prisma-weather');
@@ -85,7 +85,7 @@
   idle.style.setProperty('--p-a',p.colors[0]);idle.style.setProperty('--p-b',p.colors[1]);idle.style.setProperty('--p-c',p.colors[2]);idle.style.setProperty('--p-base',p.base);
   idle.dataset.prismaMotion=String(horizonMotionAllowed());idle.dataset.prismaQuiet=String(prefs.idleStyle==='quiet');
   for(const [key,value]of Object.entries({'--p-a':p.colors[0],'--p-b':p.colors[1],'--p-c':p.colors[2],'--p-base':p.base}))homeStage.style.setProperty(key,value);
-  richSetText('prisma-palette-name',p.name);idle.querySelector('.rich-greeting').textContent='AGORA É TEMPO DE DESACELERAR';
+  richSetText('prisma-palette-name',p.name);idle.querySelector('.rich-greeting').textContent='O MUNDO PODE ESPERAR.';
   if(climateTitle.textContent!=='Contagem, MG')climateTitle.textContent='Contagem, MG';window.PeepCollections?.paintIdle();
  }
  function cyclePrisma(delta){if(prefs.idleCollection&&window.PeepCollections){lastCycle=Date.now();lastInteraction=Date.now();PeepCollections.nextIdle(delta);save();return}prefs.idleCollection='';const index=Math.max(0,palettes.findIndex(p=>p.id===prefs.prismaPalette));prefs.prismaPalette=palettes[(index+delta+palettes.length)%palettes.length].id;lastCycle=Date.now();lastInteraction=Date.now();applyPrisma();save()}
