@@ -18,7 +18,7 @@
  root.querySelector('#channel-stats-status').after(box);
  const $=id=>box.querySelector('#'+id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const finite=v=>typeof v==='number'&&Number.isFinite(v),fmt=(v,d=0)=>finite(v)?v.toLocaleString('pt-BR',{maximumFractionDigits:d}):'—',date=d=>/^\d{4}-\d{2}-\d{2}$/.test(d||'')?new Date(d+'T12:00:00Z').toLocaleDateString('pt-BR'):'—';
- let channel='',status={},days=28,metric='estimatedMinutesWatched',data=null,generation=0,busy=false,visible=false;
+ let channel='',status={},days=28,metric='estimatedMinutesWatched',data=null,generation=0,busy=false,visible=!root.hidden;
  const memory=new Map();
  function selectTab(id,focus=false){for(const b of box.querySelectorAll('[data-ca-tab]')){const selected=b.dataset.caTab===id;b.setAttribute('aria-selected',String(selected));b.tabIndex=selected?0:-1;$('ca-panel-'+b.dataset.caTab).hidden=!selected;if(selected&&focus)b.focus()}}
  for(const b of box.querySelectorAll('[data-ca-tab]')){b.onclick=()=>selectTab(b.dataset.caTab);b.onkeydown=e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();e.stopPropagation();const tabs=[...box.querySelectorAll('[data-ca-tab]')],i=tabs.indexOf(b),next=e.key==='Home'?0:e.key==='End'?tabs.length-1:(i+(e.key==='ArrowLeft'?-1:1)+tabs.length)%tabs.length;selectTab(tabs[next].dataset.caTab,true)}}

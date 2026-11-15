@@ -9,14 +9,14 @@ function fixture(){
  const at=Date.now()/1000;
  return {connected:true,at,source:'Android nativo',sampleId:1,model:'Test TV',android:'14',ram:{totalBytes:1610612736,availableBytes:350000000},network:{interface:'wifi',transport:'Wi-Fi',rssi:-50,rxLinkMbps:433,txLinkMbps:433,frequencyMHz:5200,traffic:{downloadMbps:.0004,uploadMbps:0}},storage:{availableBytes:4000000000},uptimeSeconds:3600};
 }
-async function open(initialPrefs,installedApps,demo=false){
+async function open(initialPrefs,installedApps,demo=false,hash=""){
  let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
  const files=[...html.matchAll(/<script src="([^"]+)" defer><\/script>/g)].map(m=>m[1]);
  if(demo)files.unshift('../demo/studio-fixtures.js');
  html=html.replace(/<script src="[^"]+" defer><\/script>/g,'').replace(/<link[^>]*stylesheet[^>]*>/g,'');
  html=html.replace('</body>',()=>'<script>'+files.map(f=>fs.readFileSync(path.join(root,f),'utf8')).join('\n').replaceAll('</script','<\\/script')+'</script></body>');
  const errors=[];const console=new VirtualConsole();console.on('jsdomError',e=>errors.push(e.message));
- const dom=new JSDOM(html,{url:demo?'https://example.org/demo/studio.html':'http://127.0.0.1:8770/?tv=1',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:console,beforeParse(w){
+ const dom=new JSDOM(html,{url:(demo?'https://example.org/demo/studio.html':'http://127.0.0.1:8770/?tv=1')+hash,runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:console,beforeParse(w){
   if(initialPrefs){w.localStorage.setItem('konka-glass-v1',JSON.stringify(initialPrefs));w.Image=class{set src(value){this._src=value;w.setTimeout(()=>this.onload?.(),0)}get src(){return this._src}}}
   w.TextEncoder=TextEncoder;w.TextDecoder=TextDecoder;w.Response=Response;w.AbortSignal=AbortSignal;w.AbortController=AbortController;
   w.matchMedia=()=>({matches:false});w.HTMLElement.prototype.scrollIntoView=()=>{};
@@ -507,4 +507,20 @@ test('Brand retains its real lettering with one bitmap and uses the same master 
   assert.equal(d.querySelector('#rich-greeting').textContent,'O MUNDO PODE ESPERAR.');
   w.PeepIdle.wake();assert.deepEqual(errors,[]);
  }finally{w.close()}
+});
+
+test('Analytics loads on the OAuth return hash without requiring another navigation click',async()=>{
+ const {w,d,errors}=await open(null,null,false,'#channel-dashboard');
+ try{
+  assert.equal(d.querySelector('#channel-dashboard').hidden,false);
+  const id='UC'+'a'.repeat(22);let reads=0;
+  w.fetch=async input=>{
+   if(String(input).includes('/api/youtube/analytics'))reads++;
+   return new Response(JSON.stringify({channel:id,days:28,totals:{watchHours:2},daily:[],startDate:'2026-10-18',endDate:'2026-11-14',at:Date.now()/1000}));
+  };
+  // The owner starts navigation before the analytics module executes; the
+  // asynchronous status/data event arrives later, just as after OAuth.
+  d.dispatchEvent(new w.CustomEvent('peep-channel-data',{detail:{id,status:{analyticsVersion:1,accounts:[{id,analytics:true}]}}}));
+  await delay(45);assert.equal(reads,1);assert.equal(d.querySelector('#ca-hours').textContent,'2');assert.deepEqual(errors,[]);
+ }finally{await delay(30);w.close()}
 });

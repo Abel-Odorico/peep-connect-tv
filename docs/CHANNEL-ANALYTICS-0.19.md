@@ -59,3 +59,9 @@ No descanso, Visão geral usa agora uma linha de horizonte com clima e cotaçõe
 A marca do descanso passou a usar o mesmo lettering real da home (`peep-connect-lettering-alpha.png`, 2170 × 725). O texto claro usa a transparência como máscara com branco suave: não há mais brightness/invert, bitmap duplicado filtrado ou substituição do lettering no descanso. A proporção da arte é mantida e apenas as margens transparentes são recortadas pelo contêiner CSS. Arquivos originais e importações de logos personalizados são preservados.
 
 A demo recebe versão nos URLs de scripts/CSS. Reabrir uma demo sem mudar a versão podia conservar alguns arquivos antigos em cache e misturar as duas apresentações.
+
+## Seleção da conta de marca e retorno do OAuth
+
+No consentimento Google existem duas escolhas: primeiro a Conta do Google proprietária; depois, a conta pessoal **ou o canal de marca**. Para autorizar um canal de marca, selecionar o nome desse canal na segunda tela e conferir que ele aparece no cabeçalho do consentimento. Escolher a conta pessoal nas duas telas devolve outro channel ID; a recusa do callback é intencional e evita misturar os relatórios. Não retirar essa validação para contornar uma escolha incorreta.
+
+Ao voltar para `#channel-dashboard`, o proprietário já pode ter exibido a guia antes de executar channel-analytics.js. O módulo deve iniciar `visible` a partir de `!root.hidden`, para aceitar o evento assíncrono de dados sem exigir sair e voltar à guia. Há teste específico dessa ordem de inicialização.
