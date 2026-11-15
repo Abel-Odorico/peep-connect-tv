@@ -17,3 +17,12 @@ Contar requisições e atualizações antes/depois. Verificar console. Coletar C
 ## Inspeção temporária
 
 Habilitar peep_debug somente durante uma execução técnica autorizada. Usar redirecionamento ADB local, sem expor porta na LAN. Encerrar a sessão, remover o forward e reabrir o APK sem extra ao concluir. Não deixar debug ligado por padrão.
+
+## Retestes de navegação
+
+Confirmar a tela ativa em captura antes de comparar: launcher do Android,
+Dashboard GestorPeep e home Peep são cenários diferentes. Esperar as cargas
+iniciais terminarem. Reiniciar o app não demonstra otimização. Verificar
+se uma alteração de cache aumenta memória ou piora as caudas antes de mantê-la.
+Para fechamento de Bluetooth, considerar callbacks síncronos durante
+closeProfileProxy: soltar o lock e percorrer uma cópia já desanexada do estado.

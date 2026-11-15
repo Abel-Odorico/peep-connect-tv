@@ -42,6 +42,7 @@ final class BluetoothStatus {
     }
 
     private void changed() {
+        synchronized (this) { if (closed) return; }
         if (activity instanceof MainActivity) ((MainActivity) activity).notifyBluetooth();
     }
 
@@ -166,12 +167,21 @@ final class BluetoothStatus {
         });
     }
 
-    synchronized void close() {
-        closed = true;
-        if (registered) { try { activity.unregisterReceiver(receiver); } catch (RuntimeException ignored) { } registered = false; }
-        if (adapter != null) for (Map.Entry<Integer,BluetoothProfile> entry : profiles.entrySet()) {
+    void close() {
+        Map<Integer, BluetoothProfile> closing;
+        boolean unregister;
+        synchronized (this) {
+            if (closed) return;
+            closed = true;
+            closing = new HashMap<>(profiles);
+            profiles.clear(); observed.clear(); started = false; pending = 0;
+            unregister = registered; registered = false;
+        }
+        // closeProfileProxy may synchronously call onServiceDisconnected.
+        // Iterate a detached snapshot and never hold our lock across that callback.
+        if (unregister) try { activity.unregisterReceiver(receiver); } catch (RuntimeException ignored) { }
+        if (adapter != null) for (Map.Entry<Integer,BluetoothProfile> entry : closing.entrySet()) {
             try { adapter.closeProfileProxy(entry.getKey(), entry.getValue()); } catch (RuntimeException ignored) { }
         }
-        profiles.clear(); observed.clear(); started = false;
     }
 }

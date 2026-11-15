@@ -424,3 +424,24 @@ test('emulator page is self-contained, labels its data source and never inlines 
  assert.match(js,/dados fictícios/,'Demo source is labelled as fictional');assert.match(js,/WIDTH=960,HEIGHT=540/);
  assert.match(css,/prefers-reduced-motion/);
 });
+
+
+test('navigation reuses app cards until the visible app list changes',async()=>{
+ const {w,d,errors}=await open();try{
+  const original=[...d.querySelectorAll('#apps .app-card')];
+  for(const page of ['channel','performance','ambient','home'])d.querySelector('[data-page='+page+']').click();
+  assert.deepEqual([...d.querySelectorAll('#apps .app-card')],original);
+  original[0].focus();assert.equal(d.activeElement,original[0]);
+  d.querySelector('[data-page=apps]').click();assert.ok(d.querySelectorAll('#apps .app-card').length>original.length);
+  await delay(100);assert.deepEqual(errors,[]);
+ }finally{w.close()}
+});
+
+test('remote input temporarily prioritizes controls and then resumes decorative motion',async()=>{
+ const {w,d,errors}=await open();try{
+  d.querySelector('[data-page=home]').dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true,cancelable:true}));
+  assert.equal(d.body.classList.contains('runtime-interacting'),true);
+  await delay(500);assert.equal(d.body.classList.contains('runtime-interacting'),false);
+  assert.deepEqual(errors,[]);
+ }finally{w.close()}
+});

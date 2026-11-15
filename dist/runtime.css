@@ -30,3 +30,6 @@ html.tv-mode dialog,html.tv-mode dialog::backdrop{backdrop-filter:none!important
 body.runtime-modal .peep-motion-stage *,body.runtime-modal .landscape{animation-play-state:paused!important}
 .theme-studio-dialog .studio-tabs button{transition:none;scroll-margin:0}
 .theme-studio-dialog .studio-tab-body{scroll-behavior:auto;contain:layout paint}
+
+/* Remote input has priority; decorative motion resumes from the same frame. */
+body.runtime-interacting :is(.prisma-layer,.prisma-orb,.motion-sheet,.scene-object,.landscape){animation-play-state:paused!important}

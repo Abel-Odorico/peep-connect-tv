@@ -25,6 +25,14 @@
   document.body?.classList.toggle('runtime-hidden',document.hidden);
   schedule();
  });
+ // Give remote input priority over decorative backgrounds; resume the same frame.
+ let interactionTimer=null;
+ function interact(){
+  if(!document.documentElement.classList.contains('tv-mode'))return;
+  document.body.classList.add('runtime-interacting');clearTimeout(interactionTimer);
+  interactionTimer=setTimeout(()=>document.body.classList.remove('runtime-interacting'),450);
+ }
+ for(const type of ['keydown','wheel','pointerdown'])document.addEventListener(type,interact,{capture:true,passive:true});
  window.PeepRuntime={
   visible,
   job(name,period,callback,active=()=>true){jobs.set(name,{name,period,callback,active,next:performance.now()+period,busy:false});schedule()},

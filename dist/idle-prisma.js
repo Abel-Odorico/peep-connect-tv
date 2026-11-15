@@ -62,8 +62,11 @@
  const footer=idle.querySelector('.rich-footer');footer.querySelector('.horizon-remote-hint').innerHTML='← → painéis <span>·</span> ↑ ↓ cores <span>·</span> OK voltar';
  const editButton=document.createElement('button');editButton.className='prisma-tune';editButton.dataset.idleAction='prisma-settings';editButton.setAttribute('aria-label','Personalizar tela de descanso');editButton.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="15" cy="17" r="3"/></svg>';idle.querySelector('.rich-top-actions').prepend(editButton);
 
+ let appliedPalette='';
  function applyPrisma(){
   const p=palettes.find(p=>p.id===prefs.prismaPalette)||palettes[0];
+  const next=JSON.stringify([p.id,prefs.prismaIntensity,prefs.prismaSpeed,horizonMotionAllowed(),prefs.idleStyle,prefs.idleCollection,prefs.theme]);
+  if(next===appliedPalette)return;appliedPalette=next;
   idle.dataset.prisma=p.id;idle.dataset.intensity=prefs.prismaIntensity;idle.dataset.pace=prefs.prismaSpeed;
   idle.style.setProperty('--p-a',p.colors[0]);idle.style.setProperty('--p-b',p.colors[1]);idle.style.setProperty('--p-c',p.colors[2]);idle.style.setProperty('--p-base',p.base);
   idle.dataset.prismaMotion=String(horizonMotionAllowed());idle.dataset.prismaQuiet=String(prefs.idleStyle==='quiet');
